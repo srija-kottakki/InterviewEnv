@@ -1,0 +1,107 @@
+name: interview-env
+version: "1.0.0"
+description: >
+  A real-world OpenEnv environment that trains an AI agent to ace job interviews.
+  The interviewer has a hidden evaluation rubric the agent never sees directly.
+  The agent must infer what's being measured and adapt its answers in real time.
+  Covers HR rounds, technical interviews, and adversarial stress interviews.
+
+author: "Srija"
+tags: [interview, hiring, career, education, opportunity, nlp]
+
+tasks:
+  - id: easy
+    name: "HR Round — Cultural Fit"
+    description: >
+      The agent is interviewed for a junior engineering role.
+      The interviewer has 1 hidden criterion: cultural fit.
+      The agent must detect it from question patterns and give aligned answers.
+    max_turns: 5
+    difficulty: easy
+    pass_threshold: 0.55
+
+  - id: medium
+    name: "Technical Round — Depth, Clarity & Honesty"
+    description: >
+      The agent is interviewed for a backend developer role.
+      3 hidden criteria: technical depth, structured clarity, honest self-awareness.
+      The interviewer asks follow-up questions that expose weak answers.
+    max_turns: 8
+    difficulty: medium
+    pass_threshold: 0.60
+
+  - id: hard
+    name: "Stress Interview — Composure & Evidence"
+    description: >
+      The agent faces an adversarial interviewer who pushes back on every answer.
+      3 hidden criteria: composure under pressure, evidence-based defence, pushback handling.
+      Collapsing or over-explaining tanks the score.
+    max_turns: 12
+    difficulty: hard
+    pass_threshold: 0.65
+
+action_space:
+  type: text
+  description: "The candidate's spoken response to the interviewer"
+  model: InterviewAction
+  fields:
+    - name: message
+      type: string
+      description: "Candidate's answer to the current interview question"
+
+observation_space:
+  type: structured
+  model: InterviewObservation
+  fields:
+    - name: interviewer_message
+      type: string
+      description: "What the interviewer just said or asked"
+    - name: turn
+      type: integer
+      description: "Current turn number (0-indexed)"
+    - name: max_turns
+      type: integer
+      description: "Total turns allowed in this task"
+    - name: task_id
+      type: string
+      description: "Which task is currently active"
+    - name: done
+      type: boolean
+      description: "Whether the episode has ended"
+    - name: feedback
+      type: string
+      nullable: true
+      description: "End-of-episode rubric breakdown (only present when done=true)"
+
+reward:
+  type: continuous
+  range: [0.0, 1.0]
+  model: InterviewReward
+  description: >
+    Partial reward given every turn (not just at episode end).
+    Composed of rubric score (50%), specificity score (30%), recovery score (20%).
+    Penalises very short or generic answers.
+  fields:
+    - name: reward
+      type: float
+      description: "Combined reward for this turn"
+    - name: rubric_score
+      type: float
+      description: "How well the hidden rubric criteria were met"
+    - name: recovery_score
+      type: float
+      description: "Bonus for recovering after a weak previous answer"
+    - name: specificity_score
+      type: float
+      description: "How concrete and specific the answer was"
+
+environment:
+  real_world_task: true
+  deterministic: false
+  episodic: true
+  multi_turn: true
+
+api:
+  reset: "POST /reset"
+  step: "POST /step"
+  state: "GET /state"
