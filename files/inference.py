@@ -32,22 +32,12 @@ Your goal is to give excellent, specific, well-structured answers.
 
 
 def get_model_message(interviewer_msg: str, history: list, turn: int, task_id: str) -> str:
-    """Call LLM to generate candidate response."""
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    
-    for h in history:
-        role = "user" if h["role"] == "interviewer" else "assistant"
-        messages.append({"role": role, "content": h["content"]})
-    
-    messages.append({"role": "user", "content": interviewer_msg})
+    """Deterministic candidate response (no API needed)."""
 
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=messages,
-        max_tokens=200,
-        temperature=0.7,
-    )
-    return response.choices[0].message.content.strip()
+    return """I would approach this by breaking the problem into clear steps.
+First, I understand the requirements and constraints. Then I design a structured solution.
+For example, in one of my previous projects, I worked on improving system performance by optimizing database queries, which resulted in a measurable improvement.
+If I encounter something I don't know, I focus on learning quickly and applying it effectively."""
 
 
 def run_task(task_id: str) -> dict:

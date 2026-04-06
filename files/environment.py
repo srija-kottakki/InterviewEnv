@@ -185,6 +185,10 @@ class InterviewEnv:
 
         # Score this turn against the hidden rubric
         turn_rubric_score = self._score_rubric(candidate_message)
+
+        confidence = min(len(candidate_message.split()) / 100, 1.0)
+        perception_gap = abs(confidence - turn_rubric_score)
+        
         turn_specificity = self._score_specificity(candidate_message)
 
         # Recovery: if last turn was weak and this one is strong
@@ -202,6 +206,7 @@ class InterviewEnv:
             turn_specificity * 0.30 +
             recovery * 0.20
         )
+        turn_reward -= perception_gap * 0.2
         # Penalize very short/generic answers
         if len(candidate_message.split()) < 15:
             turn_reward *= 0.5
@@ -228,7 +233,8 @@ class InterviewEnv:
             info={
                 "turn": self._turn,
                 "criteria_hit": self._rubric_scores,
-                "weak_answer": self._weak_answer_last_turn
+                "weak_answer": self._weak_answer_last_turn,
+                "perception_gap": round(perception_gap, 4)
             }
         )
 
@@ -321,6 +327,14 @@ class InterviewEnv:
             lines.append(f"  {criterion.replace('_', ' ').title()}: {grade} ({score:.2f})")
         recovery_avg = sum(self._recovery_scores) / max(len(self._recovery_scores), 1)
         lines.append(f"  Recovery ability: {recovery_avg:.2f}")
+
+        lines.append("\nKey Insight:")
+
+        if any(score < 0.3 for score in self._rubric_scores.values()):
+            lines.append("You appear confident, but your answers lack depth or clarity.")
+
+        if sum(self._recovery_scores) > 0:
+            lines.append("You showed improvement after weak answers — strong recovery ability.")
         return "\n".join(lines)
 
 
