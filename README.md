@@ -1,3 +1,11 @@
+---
+title: InterviewEnv
+emoji: "🤗"
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
 # InterviewEnv
 
 InterviewEnv is a real-world OpenEnv environment where an AI agent plays the role of a job candidate in a multi-turn interview. The interviewer uses a hidden rubric, and the agent must infer what is being evaluated from the questions, then adapt its answers over time.
