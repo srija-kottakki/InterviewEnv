@@ -7,7 +7,6 @@ Must complete in under 20 minutes on vcpu=2, memory=8gb.
 import os
 import json
 import asyncio
-from openai import OpenAI
 from environment import InterviewEnv, InterviewAction, get_grader
 
 # ─────────────────────────────────────────────
@@ -17,10 +16,7 @@ API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME   = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 HF_TOKEN     = os.environ.get("HF_TOKEN", "")
 
-client = OpenAI(
-    base_url=API_BASE_URL,
-    api_key=HF_TOKEN or os.environ.get("OPENAI_API_KEY", "sk-placeholder"),
-)
+
 
 SYSTEM_PROMPT = """You are a job candidate in a real interview. 
 Your goal is to give excellent, specific, well-structured answers.
@@ -83,6 +79,7 @@ def run_task(task_id: str) -> dict:
         })
 
         # ── [STEP] log ──
+        print("[STEP]")
         print(json.dumps({
             "type": "STEP",
             "task_id": task_id,
@@ -119,16 +116,15 @@ def run_task(task_id: str) -> dict:
 
 def main():
     """Run all 3 tasks and report scores."""
+    print("[START]")
     print(json.dumps({"type": "START", "event": "inference_begin", "model": MODEL_NAME}))
 
     results = {}
     for task_id in ["easy", "medium", "hard"]:
-        print(f"\n{'='*50}")
-        print(f"Running task: {task_id.upper()}")
-        print('='*50)
         result = run_task(task_id)
         results[task_id] = result["final_score"]
 
+    print("[END]")
     print(json.dumps({
         "type": "END",
         "event": "inference_complete",
@@ -143,4 +139,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print("[ERROR]", str(e))
