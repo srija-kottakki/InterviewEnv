@@ -1,0 +1,98 @@
+name: interview-env
+version: "1.0.0"
+description: >
+  A real-world OpenEnv environment that trains an AI agent to improve interview performance.
+  The agent must infer hidden evaluation criteria from interviewer questions and adapt in real time.
+
+author: "Kottakki Sai Srija"
+tags: [interview, hiring, career, education, communication, openenv]
+
+tasks:
+  - id: easy
+    name: "HR Round - Cultural Fit"
+    description: >
+      The agent is interviewed for a junior engineering role.
+      The interviewer mainly values cultural fit and collaborative growth mindset.
+    max_turns: 5
+    difficulty: easy
+    pass_threshold: 0.55
+  - id: medium
+    name: "Technical Round - Depth, Clarity & Honesty"
+    description: >
+      The agent is interviewed for a backend role and must balance technical depth,
+      structured communication, and honest self-awareness.
+    max_turns: 8
+    difficulty: medium
+    pass_threshold: 0.60
+  - id: hard
+    name: "Stress Interview - Composure & Evidence"
+    description: >
+      The agent faces adversarial pushback and must stay calm, specific, and evidence-driven.
+    max_turns: 12
+    difficulty: hard
+    pass_threshold: 0.65
+
+action_space:
+  type: text
+  model: InterviewAction
+  description: "The candidate's spoken response to the interviewer."
+  fields:
+    - name: message
+      type: string
+      description: "Candidate answer for the current turn."
+
+observation_space:
+  type: structured
+  model: InterviewObservation
+  fields:
+    - name: interviewer_message
+      type: string
+      description: "The latest prompt or response from the interviewer."
+    - name: turn
+      type: integer
+      description: "Current turn number."
+    - name: max_turns
+      type: integer
+      description: "Maximum turns for the active task."
+    - name: task_id
+      type: string
+      description: "Active task identifier."
+    - name: done
+      type: boolean
+      description: "Whether the episode has ended."
+    - name: feedback
+      type: string
+      nullable: true
+      description: "End-of-episode rubric feedback."
+
+reward:
+  type: continuous
+  range: [0.0, 1.0]
+  model: InterviewReward
+  description: >
+    Partial reward is emitted every turn using rubric alignment, specificity,
+    and recovery after weak responses, with penalties for generic answers.
+  fields:
+    - name: reward
+      type: float
+      description: "Combined reward for the current step."
+    - name: rubric_score
+      type: float
+      description: "Alignment with the hidden rubric."
+    - name: recovery_score
+      type: float
+      description: "Bonus for recovering after a weak turn."
+    - name: specificity_score
+      type: float
+      description: "How concrete and evidence-based the response is."
+
+environment:
+  real_world_task: true
+  deterministic: true
+  episodic: true
+  multi_turn: true
+
+api:
+  reset: "POST /reset"
+  step: "POST /step"
+  state: "GET /state"
