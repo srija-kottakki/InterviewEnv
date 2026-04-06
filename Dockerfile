@@ -9,7 +9,7 @@ COPY . .
 
 EXPOSE 7860
 
-ENV API_BASE_URL=""
+ENV API_BASE_URL="https://router.huggingface.co/v1"
 ENV MODEL_NAME="gpt-4o-mini"
 ENV HF_TOKEN=""
 

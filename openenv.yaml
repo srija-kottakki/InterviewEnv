@@ -1,53 +1,45 @@
 name: interview-env
 version: "1.0.0"
 description: >
-  A real-world OpenEnv environment that trains an AI agent to ace job interviews.
-  The interviewer has a hidden evaluation rubric the agent never sees directly.
-  The agent must infer what's being measured and adapt its answers in real time.
-  Covers HR rounds, technical interviews, and adversarial stress interviews.
+  A real-world OpenEnv environment that trains an AI agent to improve interview performance.
+  The agent must infer hidden evaluation criteria from interviewer questions and adapt in real time.
 
-author: "Srija"
-tags: [interview, hiring, career, education, opportunity, nlp]
+author: "Kottakki Sai Srija"
+tags: [interview, hiring, career, education, communication, openenv]
 
 tasks:
   - id: easy
-    name: "HR Round — Cultural Fit"
+    name: "HR Round - Cultural Fit"
     description: >
       The agent is interviewed for a junior engineering role.
-      The interviewer has 1 hidden criterion: cultural fit.
-      The agent must detect it from question patterns and give aligned answers.
+      The interviewer mainly values cultural fit and collaborative growth mindset.
     max_turns: 5
     difficulty: easy
     pass_threshold: 0.55
-
   - id: medium
-    name: "Technical Round — Depth, Clarity & Honesty"
+    name: "Technical Round - Depth, Clarity & Honesty"
     description: >
-      The agent is interviewed for a backend developer role.
-      3 hidden criteria: technical depth, structured clarity, honest self-awareness.
-      The interviewer asks follow-up questions that expose weak answers.
+      The agent is interviewed for a backend role and must balance technical depth,
+      structured communication, and honest self-awareness.
     max_turns: 8
     difficulty: medium
     pass_threshold: 0.60
-
   - id: hard
-    name: "Stress Interview — Composure & Evidence"
+    name: "Stress Interview - Composure & Evidence"
     description: >
-      The agent faces an adversarial interviewer who pushes back on every answer.
-      3 hidden criteria: composure under pressure, evidence-based defence, pushback handling.
-      Collapsing or over-explaining tanks the score.
+      The agent faces adversarial pushback and must stay calm, specific, and evidence-driven.
     max_turns: 12
     difficulty: hard
     pass_threshold: 0.65
 
 action_space:
   type: text
-  description: "The candidate's spoken response to the interviewer"
   model: InterviewAction
+  description: "The candidate's spoken response to the interviewer."
   fields:
     - name: message
       type: string
-      description: "Candidate's answer to the current interview question"
+      description: "Candidate answer for the current turn."
 
 observation_space:
   type: structured
@@ -55,49 +47,48 @@ observation_space:
   fields:
     - name: interviewer_message
       type: string
-      description: "What the interviewer just said or asked"
+      description: "The latest prompt or response from the interviewer."
     - name: turn
       type: integer
-      description: "Current turn number (0-indexed)"
+      description: "Current turn number."
     - name: max_turns
       type: integer
-      description: "Total turns allowed in this task"
+      description: "Maximum turns for the active task."
     - name: task_id
       type: string
-      description: "Which task is currently active"
+      description: "Active task identifier."
     - name: done
       type: boolean
-      description: "Whether the episode has ended"
+      description: "Whether the episode has ended."
     - name: feedback
       type: string
       nullable: true
-      description: "End-of-episode rubric breakdown (only present when done=true)"
+      description: "End-of-episode rubric feedback."
 
 reward:
   type: continuous
   range: [0.0, 1.0]
   model: InterviewReward
   description: >
-    Partial reward given every turn (not just at episode end).
-    Composed of rubric score (50%), specificity score (30%), recovery score (20%).
-    Penalises very short or generic answers.
+    Partial reward is emitted every turn using rubric alignment, specificity,
+    and recovery after weak responses, with penalties for generic answers.
   fields:
     - name: reward
       type: float
-      description: "Combined reward for this turn"
+      description: "Combined reward for the current step."
     - name: rubric_score
       type: float
-      description: "How well the hidden rubric criteria were met"
+      description: "Alignment with the hidden rubric."
     - name: recovery_score
       type: float
-      description: "Bonus for recovering after a weak previous answer"
+      description: "Bonus for recovering after a weak turn."
     - name: specificity_score
       type: float
-      description: "How concrete and specific the answer was"
+      description: "How concrete and evidence-based the response is."
 
 environment:
   real_world_task: true
-  deterministic: false
+  deterministic: true
   episodic: true
   multi_turn: true
 
