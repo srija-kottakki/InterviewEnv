@@ -9,14 +9,15 @@ from interview_logic import evaluate_answer, generate_question, normalize_diffic
 APP_CSS = """
 :root {
   --surface: #ffffff;
-  --surface-soft: #f8fafc;
-  --muted: #667085;
+  --surface-soft: #f9fafb;
+  --muted: #475467;
   --ink: #101828;
-  --line: #e4e7ec;
-  --blue: #175cd3;
-  --blue-dark: #1849a9;
-  --green: #027a48;
+  --line: #d0d5dd;
+  --blue: #2563eb;
+  --blue-dark: #1d4ed8;
+  --green: #067647;
   --green-soft: #ecfdf3;
+  --navy: #172554;
 }
 
 .gradio-container {
@@ -25,7 +26,7 @@ APP_CSS = """
   min-height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
-  background: #f5f7fb !important;
+  background: #f9fafb !important;
   color: var(--ink) !important;
 }
 
@@ -41,25 +42,29 @@ footer {
 
 .app-shell {
   align-items: stretch !important;
+  background: #f9fafb;
   display: grid !important;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 0 !important;
+  gap: 20px !important;
+  grid-template-columns: 280px minmax(0, 1fr);
   min-height: 100vh;
+  padding: 22px;
 }
 
 .sidebar {
-  background: #101828;
-  color: #ffffff;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  color: var(--ink);
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
   height: 100%;
-  min-height: 100vh;
-  padding: 32px 28px;
+  min-height: calc(100vh - 44px);
+  padding: 26px 22px;
 }
 
 .brand-kicker {
-  color: #84caff;
+  color: var(--blue);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.14em;
@@ -68,14 +73,15 @@ footer {
 }
 
 .sidebar h1 {
-  font-size: 42px;
+  color: var(--navy);
+  font-size: 38px;
   letter-spacing: -0.05em;
   line-height: 0.95;
   margin: 0 0 14px;
 }
 
 .sidebar p {
-  color: #d0d5dd;
+  color: var(--muted);
   font-size: 15px;
   line-height: 1.6;
   margin: 0;
@@ -88,10 +94,10 @@ footer {
 
 .step-pill {
   align-items: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #f8fafc;
+  border: 1px solid var(--line);
   border-radius: 14px;
-  color: #f9fafb;
+  color: #344054;
   display: flex;
   font-size: 14px;
   font-weight: 750;
@@ -101,7 +107,8 @@ footer {
 
 .step-number {
   align-items: center;
-  background: #2e90fa;
+  background: #dbeafe;
+  color: var(--blue-dark);
   border-radius: 999px;
   display: inline-flex;
   font-size: 12px;
@@ -113,18 +120,23 @@ footer {
 .content {
   display: grid;
   gap: 18px;
-  min-height: 100vh;
-  padding: 28px;
+  min-height: calc(100vh - 44px);
+  padding: 0;
 }
 
 .topbar {
   align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 22px;
   display: flex;
   justify-content: space-between;
   gap: 18px;
+  padding: 22px 24px;
 }
 
 .topbar h2 {
+  color: var(--navy);
   font-size: 28px;
   letter-spacing: -0.03em;
   margin: 0;
@@ -138,7 +150,7 @@ footer {
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 20px;
   box-shadow: none;
   padding: 18px;
 }
@@ -153,7 +165,7 @@ footer {
 }
 
 .question-card {
-  background: #ffffff;
+  background: #eff6ff;
   border: 1px solid #d1e9ff;
   border-left: 5px solid var(--blue);
   border-radius: 18px;
@@ -177,7 +189,7 @@ footer {
 }
 
 .feedback-card {
-  background: #fcfcfd;
+  background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 18px;
@@ -247,19 +259,24 @@ textarea,
 input,
 select {
   border-radius: 12px !important;
+  color: var(--ink) !important;
+}
+
+.wrap,
+.block,
+.form,
+.gr-form {
+  border-color: var(--line) !important;
 }
 
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
+    padding: 14px;
   }
 
   .sidebar {
     min-height: auto;
-  }
-
-  .content {
-    padding: 18px;
   }
 
   .question-card p {
