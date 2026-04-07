@@ -89,6 +89,14 @@ python inference.py
 
 The script uses the OpenAI Python client for model calls and emits structured stdout blocks marked with `[START]`, `[STEP]`, and `[END]`.
 
+Sample output format:
+
+```text
+[START] {"type":"START","task_id":"easy","max_turns":5,"interviewer_opening":"Hi! Thanks for coming in today..."}
+[STEP] {"type":"STEP","task_id":"easy","turn":1,"candidate_message":"...","interviewer_message":"...","reward":0.543,"rubric_score":1.0,"specificity_score":0.55,"done":false}
+[END] {"type":"END","task_id":"easy","final_score":0.865,"avg_reward":0.612,"total_turns":5,"feedback":"Interview complete..."}
+```
+
 ## Docker
 
 ```bash

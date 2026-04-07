@@ -30,6 +30,13 @@ class InterviewReward(BaseModel):
     info: dict = Field(default_factory=dict, description="Auxiliary debugging information")
 
 
+class InterviewState(InterviewObservation):
+    rubric_name: str = Field(..., description="Human-readable name of the active task rubric")
+    history_length: int = Field(..., description="Number of messages in the interview transcript")
+    current_rubric_scores: dict[str, float] = Field(..., description="Best rubric score seen for each criterion")
+    pass_threshold: float = Field(..., description="Task pass threshold")
+
+
 TASKS = {
     "easy": {
         "name": "HR Round - Cultural Fit",
@@ -144,6 +151,7 @@ class InterviewEnv:
         self._recovery_scores: list[float] = []
         self._followup_index = 0
         self._probe_index = 0
+        self._current_observation: Optional[InterviewObservation] = None
 
     def reset(self) -> InterviewObservation:
         self._turn = 0
@@ -158,7 +166,7 @@ class InterviewEnv:
         opening = self._scenario["opening"]
         self._history.append({"role": "interviewer", "content": opening})
 
-        return InterviewObservation(
+        self._current_observation = InterviewObservation(
             interviewer_message=opening,
             turn=0,
             max_turns=self._config["max_turns"],
@@ -166,6 +174,7 @@ class InterviewEnv:
             done=False,
             feedback=None,
         )
+        return self._current_observation
 
     def step(self, action: InterviewAction) -> tuple[InterviewObservation, InterviewReward, bool]:
         if self._done:
@@ -213,6 +222,7 @@ class InterviewEnv:
             done=done,
             feedback=self._generate_feedback() if done else None,
         )
+        self._current_observation = observation
 
         reward = InterviewReward(
             reward=turn_reward,
@@ -229,17 +239,20 @@ class InterviewEnv:
 
         return observation, reward, done
 
-    def state(self) -> dict:
-        return {
-            "task_id": self.task_id,
-            "turn": self._turn,
-            "max_turns": self._config["max_turns"],
-            "done": self._done,
-            "rubric_name": TASKS[self.task_id]["name"],
-            "history_length": len(self._history),
-            "current_rubric_scores": dict(self._rubric_scores),
-            "pass_threshold": self._config["pass_threshold"],
-        }
+    def state(self) -> InterviewState:
+        observation = self._current_observation or self.reset()
+        return InterviewState(
+            interviewer_message=observation.interviewer_message,
+            turn=observation.turn,
+            max_turns=observation.max_turns,
+            task_id=observation.task_id,
+            done=observation.done,
+            feedback=observation.feedback,
+            rubric_name=TASKS[self.task_id]["name"],
+            history_length=len(self._history),
+            current_rubric_scores=dict(self._rubric_scores),
+            pass_threshold=self._config["pass_threshold"],
+        )
 
     def _score_rubric(self, text: str) -> float:
         text_lower = text.lower()

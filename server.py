@@ -41,8 +41,17 @@ def health():
 
 @app.post("/reset")
 def reset(request: Optional[ResetRequest] = None):
-    global _env
     task_id = request.task_id if request else "easy"
+    return reset_task(task_id)
+
+
+@app.get("/reset")
+def reset_get(task_id: str = "easy"):
+    return reset_task(task_id)
+
+
+def reset_task(task_id: str):
+    global _env
     if task_id not in TASKS:
         raise HTTPException(status_code=400, detail=f"task_id must be one of {list(TASKS)}")
     _env = InterviewEnv(task_id=task_id)
@@ -54,7 +63,7 @@ def step(action: InterviewAction):
     global _env
     if _env is None:
         raise HTTPException(status_code=400, detail="Call /reset first")
-    if _env.state()["done"]:
+    if _env.state().done:
         raise HTTPException(status_code=400, detail="Episode done. Call /reset to start a new episode.")
 
     observation, reward, done = _env.step(action)
@@ -66,7 +75,7 @@ def state():
     global _env
     if _env is None:
         raise HTTPException(status_code=400, detail="Call /reset first")
-    return _env.state()
+    return _env.state().model_dump()
 
 
 @app.get("/tasks")

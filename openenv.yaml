@@ -16,6 +16,7 @@ tasks:
     max_turns: 5
     difficulty: easy
     pass_threshold: 0.55
+    grader: grade_easy
   - id: medium
     name: "Technical Round - Depth, Clarity & Honesty"
     description: >
@@ -24,6 +25,7 @@ tasks:
     max_turns: 8
     difficulty: medium
     pass_threshold: 0.60
+    grader: grade_medium
   - id: hard
     name: "Stress Interview - Composure & Evidence"
     description: >
@@ -31,6 +33,7 @@ tasks:
     max_turns: 12
     difficulty: hard
     pass_threshold: 0.65
+    grader: grade_hard
 
 action_space:
   type: text
@@ -86,6 +89,17 @@ reward:
       type: float
       description: "How concrete and evidence-based the response is."
 
+typed_models:
+  action: models.InterviewAction
+  observation: models.InterviewObservation
+  state: models.InterviewState
+  reward: models.InterviewReward
+
+graders:
+  easy: grade_easy
+  medium: grade_medium
+  hard: grade_hard
+
 environment:
   real_world_task: true
   deterministic: true
@@ -93,6 +107,7 @@ environment:
   multi_turn: true
 
 api:
-  reset: "POST /reset"
+  reset: "GET /reset or POST /reset"
   step: "POST /step"
   state: "GET /state"
+  tasks: "GET /tasks"

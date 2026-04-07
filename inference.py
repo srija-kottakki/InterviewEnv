@@ -30,8 +30,7 @@ SYSTEM_PROMPT = (
 
 
 def emit(marker: str, payload: dict[str, Any]) -> None:
-    print(marker)
-    print(json.dumps(payload, ensure_ascii=True))
+    print(f"{marker} {json.dumps(payload, ensure_ascii=True)}")
 
 
 def build_messages(task_id: str, history: list[dict[str, str]], turn: int) -> list[dict[str, str]]:
