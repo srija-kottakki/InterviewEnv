@@ -13,6 +13,14 @@ from env.tasks import TASKS
 from models import ActionModel, MetadataModel, ResetRequest, StateModel, StepResponseModel
 from utils.resume_parser import extract_resume_text, parse_resume_text
 
+try:
+    import gradio as gr
+
+    from ui.gradio_app import build_gradio_demo
+except Exception:
+    gr = None
+    build_gradio_demo = None
+
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 UI_DIR = BASE_DIR / "ui"
@@ -30,9 +38,10 @@ app.mount("/ui", StaticFiles(directory=UI_DIR, html=True), name="ui")
 ENV = InterviewEnv()
 
 
-@app.get("/")
-def root():
-    return FileResponse(UI_DIR / "index.html")
+if gr is None or build_gradio_demo is None:
+    @app.get("/")
+    def root():
+        return FileResponse(UI_DIR / "index.html")
 
 
 @app.get("/metadata", response_model=MetadataModel)
@@ -95,3 +104,7 @@ def step(action: ActionModel) -> StepResponseModel:
 @app.get("/state", response_model=StateModel)
 def state() -> StateModel:
     return ENV.state()
+
+
+if gr is not None and build_gradio_demo is not None:
+    app = gr.mount_gradio_app(app, build_gradio_demo(), path="/")

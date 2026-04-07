@@ -13,6 +13,17 @@ InterviewEnv is an OpenEnv Round 1 submission that turns interview practice into
 
 The app works with or without resume upload. Without a resume, it uses a general interview bank. With a PDF/text resume, it parses skills, projects, tools, education, and experience to personalize follow-up questions.
 
+## Demo Flow
+
+The live Space opens to a clean Gradio mock interview simulator:
+
+- Select `Easy`, `Medium`, or `Hard`
+- Click `Generate Question`
+- Read the `Interviewer` prompt
+- Type `Your Answer`
+- Click `Submit Answer`
+- Review feedback with score, strengths, weakness, and a suggested improvement
+
 ## Why This Is RL-Based
 
 InterviewEnv is not only an LLM evaluator. It has a Markov-style transition loop:
