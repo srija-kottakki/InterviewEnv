@@ -1,14 +1,21 @@
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from environment import InterviewAction, InterviewEnv, TASKS
 
 
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
 app = FastAPI(title="InterviewEnv", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 _env: Optional[InterviewEnv] = None
 
@@ -19,6 +26,11 @@ class ResetRequest(BaseModel):
 
 @app.get("/")
 def root():
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/api")
+def api_root():
     return {"name": "InterviewEnv", "tasks": list(TASKS)}
 
 
