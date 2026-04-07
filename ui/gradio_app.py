@@ -40,8 +40,10 @@ footer {
 }
 
 .app-shell {
-  display: grid;
+  align-items: stretch !important;
+  display: grid !important;
   grid-template-columns: 320px minmax(0, 1fr);
+  gap: 0 !important;
   min-height: 100vh;
 }
 
@@ -51,6 +53,8 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 28px;
+  height: 100%;
+  min-height: 100vh;
   padding: 32px 28px;
 }
 
@@ -109,6 +113,7 @@ footer {
 .content {
   display: grid;
   gap: 18px;
+  min-height: 100vh;
   padding: 28px;
 }
 
@@ -271,80 +276,82 @@ def build_gradio_demo():
         session_history = gr.State([])
         current_question = gr.State("")
 
-        gr.HTML(
-            """
-            <div class="app-shell">
-              <aside class="sidebar">
-                <div>
-                  <div class="brand-kicker">AI Interview Simulator</div>
-                  <h1>InterviewEnv</h1>
-                  <p>Practice interview answers with adaptive questions and instant interviewer-style feedback.</p>
-                </div>
-                <div class="sidebar-steps">
-                  <div class="step-pill"><span class="step-number">1</span>Select difficulty</div>
-                  <div class="step-pill"><span class="step-number">2</span>Generate question</div>
-                  <div class="step-pill"><span class="step-number">3</span>Submit answer</div>
-                  <div class="step-pill"><span class="step-number">4</span>Improve with feedback</div>
-                </div>
-              </aside>
-              <main class="content">
-                <div class="topbar">
-                  <div>
-                    <h2>Mock Interview Workspace</h2>
-                    <p>Minimal flow for fast demos: question, answer, feedback.</p>
-                  </div>
-                </div>
-            """
-        )
+        with gr.Row(elem_classes=["app-shell"], equal_height=True):
+            with gr.Column(scale=1, min_width=280, elem_classes=["sidebar"]):
+                gr.HTML(
+                    """
+                    <div>
+                      <div class="brand-kicker">AI Interview Simulator</div>
+                      <h1>InterviewEnv</h1>
+                      <p>Practice interview answers with adaptive questions and instant interviewer-style feedback.</p>
+                    </div>
+                    <div class="sidebar-steps">
+                      <div class="step-pill"><span class="step-number">1</span>Select difficulty</div>
+                      <div class="step-pill"><span class="step-number">2</span>Generate question</div>
+                      <div class="step-pill"><span class="step-number">3</span>Submit answer</div>
+                      <div class="step-pill"><span class="step-number">4</span>Improve with feedback</div>
+                    </div>
+                    """
+                )
 
-        with gr.Row(equal_height=True):
-            with gr.Column(scale=4):
+            with gr.Column(scale=4, min_width=640, elem_classes=["content"]):
+                gr.HTML(
+                    """
+                    <div class="topbar">
+                      <div>
+                        <h2>Mock Interview Workspace</h2>
+                        <p>Minimal flow for fast demos: question, answer, feedback.</p>
+                      </div>
+                    </div>
+                    """
+                )
+
+                with gr.Row(equal_height=True):
+                    with gr.Column(scale=4):
+                        with gr.Group(elem_classes=["panel"]):
+                            gr.HTML('<div class="section-label">Interview Setup</div>')
+                            with gr.Row():
+                                difficulty = gr.Dropdown(
+                                    label="Select Difficulty",
+                                    choices=["Easy", "Medium", "Hard"],
+                                    value="Easy",
+                                    interactive=True,
+                                )
+                                generate_button = gr.Button("Generate Question", variant="primary")
+                            gr.HTML(
+                                """
+                                <div class="empty-state">
+                                  Tip: For a strong answer, include context, your action, and the result.
+                                </div>
+                                """
+                            )
+
+                    with gr.Column(scale=3):
+                        with gr.Group(elem_classes=["panel"]):
+                            gr.HTML('<div class="section-label">Session Summary</div>')
+                            summary_box = gr.HTML(_render_summary([]))
+
                 with gr.Group(elem_classes=["panel"]):
-                    gr.HTML('<div class="section-label">Interview Setup</div>')
-                    with gr.Row():
-                        difficulty = gr.Dropdown(
-                            label="Select Difficulty",
-                            choices=["Easy", "Medium", "Hard"],
-                            value="Easy",
-                            interactive=True,
-                        )
-                        generate_button = gr.Button("Generate Question", variant="primary")
-                    gr.HTML(
-                        """
-                        <div class="empty-state">
-                          Tip: For a strong answer, include context, your action, and the result.
-                        </div>
-                        """
-                    )
+                    interviewer_box = gr.HTML(_render_question("Click Generate Question to start your mock interview.", "ready"))
 
-            with gr.Column(scale=3):
-                with gr.Group(elem_classes=["panel"]):
-                    gr.HTML('<div class="section-label">Session Summary</div>')
-                    summary_box = gr.HTML(_render_summary([]))
+                with gr.Row(equal_height=True):
+                    with gr.Column(scale=5):
+                        with gr.Group(elem_classes=["panel"]):
+                            gr.HTML('<div class="section-label">Your Answer</div>')
+                            answer_box = gr.Textbox(
+                                label="",
+                                placeholder="Type your answer here. Example: Using STAR, the situation was...",
+                                lines=8,
+                                show_label=False,
+                            )
+                            with gr.Row():
+                                sample_button = gr.Button("Use Sample Answer")
+                                submit_button = gr.Button("Submit Answer", variant="primary")
 
-        with gr.Group(elem_classes=["panel"]):
-            interviewer_box = gr.HTML(_render_question("Click Generate Question to start your mock interview.", "ready"))
-
-        with gr.Row(equal_height=True):
-            with gr.Column(scale=5):
-                with gr.Group(elem_classes=["panel"]):
-                    gr.HTML('<div class="section-label">Your Answer</div>')
-                    answer_box = gr.Textbox(
-                        label="",
-                        placeholder="Type your answer here. Example: Using STAR, the situation was...",
-                        lines=8,
-                        show_label=False,
-                    )
-                    with gr.Row():
-                        sample_button = gr.Button("Use Sample Answer")
-                        submit_button = gr.Button("Submit Answer", variant="primary")
-
-            with gr.Column(scale=4):
-                with gr.Group(elem_classes=["panel"]):
-                    gr.HTML('<div class="section-label">Feedback</div>')
-                    feedback_box = gr.HTML(_render_empty_feedback())
-
-        gr.HTML("</main></div>")
+                    with gr.Column(scale=4):
+                        with gr.Group(elem_classes=["panel"]):
+                            gr.HTML('<div class="section-label">Feedback</div>')
+                            feedback_box = gr.HTML(_render_empty_feedback())
 
         generate_button.click(
             fn=_on_generate_question,
