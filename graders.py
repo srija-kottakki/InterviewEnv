@@ -67,23 +67,29 @@ def _improvement_score(state: dict, current_signal: float) -> float:
 
 
 def _confidence_alignment(action: dict, feedback: dict[str, object]) -> float:
-    confidence_level = float(action.get("confidence_level", 3))
-    claimed = confidence_level / 5.0
+    confidence_level = float(action.get("confidence_level", 3)) / 5.0
+    confidence = float(action.get("confidence", 0.5))
+    claimed = max(confidence_level, confidence)
     observed = float(feedback["confidence_score"])
     return _clamp(1.0 - abs(claimed - observed))
 
 
 def _strategy_score(answer: str, action: dict, task_id: str) -> float:
-    strategy = action.get("answer_strategy", "detailed")
+    strategy = action.get("strategy") if action.get("strategy") != "default" else action.get("answer_strategy", "detailed")
     if strategy == "skip":
         return 0.0 if answer else 0.1
     if strategy == "clarify":
         return 0.75 if "?" in answer or len(answer.split()) >= 18 else 0.45
+    if strategy in {"concise", "default"}:
+        return 0.75 if 10 <= len(answer.split()) <= 55 else 0.50
     if strategy == "direct":
         return 0.8 if 12 <= len(answer.split()) <= 80 else 0.55
-    if strategy == "detailed":
+    if strategy in {"detailed", "structured"}:
         target = {"easy": 30, "medium": 55, "hard": 80}[task_id]
-        return _length_credit(answer, target)
+        score = _length_credit(answer, target)
+        if strategy == "structured" and _star_bonus(answer) >= 0.5:
+            score += 0.10
+        return _clamp(score)
     return 0.5
 
 

@@ -46,7 +46,7 @@ schemas:
         description: "Backward-compatible alias for answer."
       answer_strategy:
         type: string
-        enum: ["direct", "detailed", "clarify", "skip"]
+        enum: ["direct", "detailed", "structured", "concise", "default", "clarify", "skip"]
         required: false
         default: "detailed"
         description: "Structured RL action controlling answer style."
@@ -57,6 +57,19 @@ schemas:
         required: false
         default: 3
         description: "Self-reported confidence."
+      confidence:
+        type: number
+        minimum: 0.0
+        maximum: 1.0
+        required: false
+        default: 0.5
+        description: "Continuous confidence alias used for reward shaping."
+      strategy:
+        type: string
+        enum: ["direct", "detailed", "structured", "concise", "default", "clarify", "skip"]
+        required: false
+        default: "default"
+        description: "Strategy alias for decision-based actions."
       tone:
         type: string
         enum: ["neutral", "confident", "collaborative", "defensive"]
@@ -87,6 +100,7 @@ schemas:
       reward_breakdown: object
       performance_history: array
       last_action: object
+      learning_metrics: object
   state:
     model: "models.StateModel"
     type: object
@@ -113,6 +127,7 @@ schemas:
       adaptivity_factor: number
       reward_breakdown: object
       last_action: object
+      learning_metrics: object
       score: number
       success: boolean
       quality_label: string
@@ -131,7 +146,7 @@ reward:
   type: float
   range: [0.0, 1.0]
   partial_credit: true
-  formula: "reward = weighted(correctness, clarity, confidence, consistency_over_time, improvement, confidence_alignment, action_strategy)"
+  formula: "shaped_reward = task_weight * (base_reward + 0.2 * positive_improvement + consistency_bonus + strategy_bonus + confidence_bonus - repetition_penalty); cumulative_score += shaped_reward"
   components:
     correctness: "Question/task relevance, resume match when available, and STAR/technical rubric evidence."
     clarity: "Structure, coherence, and relevance from deterministic feedback analysis."
@@ -140,7 +155,9 @@ reward:
     improvement: "Bonus for improving over the previous reward signal."
     confidence_alignment: "Agreement between self-reported confidence_level and observed confidence."
     action_strategy: "Rewards appropriate structured action choices; skip is penalized."
-  termination: "Episode terminates when reward >= task success_threshold or turn >= max_steps."
+    repetition_penalty: "Penalizes repeated answers from the recent QA memory."
+    cumulative_learning: "Success uses average cumulative score after at least two turns, not a single-step spike."
+  termination: "Episode terminates when average_score >= task success_threshold after at least two turns or turn >= max_steps."
 
 api:
   reset:

@@ -19,8 +19,8 @@ InterviewEnv is not only an LLM evaluator. It has a Markov-style transition loop
 
 - **State**: current question, task, difficulty, stress level, score trend, score history, behavioral feedback, resume context, question history, QA history, and performance history.
 - **Action**: structured candidate policy choice with `answer`, `answer_strategy`, `confidence_level`, and `tone`.
-- **Transition**: `step(action)` grades the answer, updates performance history, adapts difficulty, updates stress/adaptivity factor, selects a new question, and terminates on success or max turns.
-- **Reward**: deterministic float in `[0.0, 1.0]` using current performance plus consistency and improvement over previous steps.
+- **Transition**: `step(action)` grades the answer, shapes reward from improvement and memory, updates cumulative score/performance history, adapts difficulty, updates stress/adaptivity factor, selects a new question, and terminates on sustained success or max turns.
+- **Reward**: deterministic shaped float in `[0.0, 1.0]` using current performance, strategy/confidence choices, consistency, improvement over previous steps, and repetition penalties.
 
 ## Folder Structure
 
@@ -79,6 +79,7 @@ InterviewEnv/
   "stress_level": 0.15,
   "adaptivity_factor": 0.0,
   "reward_breakdown": {},
+  "learning_metrics": {},
   "last_action": {},
   "score": 0.0,
   "success": false,
@@ -93,16 +94,19 @@ Existing validators can still send only `answer`, but the stronger OpenEnv actio
 ```json
 {
   "answer": "I would explain the project goal, tradeoffs, result, and what I learned.",
-  "answer_strategy": "detailed",
+  "answer_strategy": "structured",
   "confidence_level": 4,
+  "strategy": "structured",
+  "confidence": 0.8,
   "tone": "collaborative"
 }
 ```
 
 Valid values:
 
-- `answer_strategy`: `direct`, `detailed`, `clarify`, `skip`
+- `answer_strategy` / `strategy`: `direct`, `detailed`, `structured`, `concise`, `default`, `clarify`, `skip`
 - `confidence_level`: integer `1` to `5`
+- `confidence`: float `0.0` to `1.0`
 - `tone`: `neutral`, `confident`, `collaborative`, `defensive`
 
 These fields affect reward, stress, difficulty adaptation, and next-question selection.
@@ -117,18 +121,20 @@ These fields affect reward, stress, difficulty adaptation, and next-question sel
 
 ## Reward Logic
 
-Reward is deterministic and always clamped to `[0.0, 1.0]`.
+Reward is deterministic and always clamped to `[0.0, 1.0]`. The returned step reward is shaped, while `score` is cumulative across the episode.
 
 ```text
-reward = weighted(
-  correctness,
-  clarity,
-  confidence,
-  consistency_over_time,
-  improvement_over_previous_step,
-  confidence_alignment,
-  action_strategy
+base_reward = weighted(correctness, clarity, confidence, consistency, improvement, confidence_alignment, action_strategy)
+shaped_reward = task_weight * (
+  base_reward
+  + 0.2 * max(base_reward - previous_reward, 0)
+  + consistency_bonus
+  + strategy_bonus
+  + confidence_bonus
+  - repetition_penalty
 )
+cumulative_score += shaped_reward
+average_score = cumulative_score / steps
 ```
 
 Components:
@@ -140,6 +146,14 @@ Components:
 - `improvement_over_previous_step`: rewards upward score trend.
 - `confidence_alignment`: compares claimed `confidence_level` against observed confidence.
 - `action_strategy`: rewards suitable strategy choices and penalizes `skip`.
+- `repetition_penalty`: discourages repeating recent answers.
+- `learning_metrics`: exposes `average_score`, `improvement_trend`, `previous_reward`, `current_reward`, and `cumulative_score`.
+
+Success requires sustained learning:
+
+```text
+success = average_score >= pass_threshold and steps >= 2
+```
 
 ## API Contract
 
@@ -160,8 +174,9 @@ Returns `StateModel`.
 ```json
 {
   "answer": "Using STAR, the situation was a team conflict...",
-  "answer_strategy": "detailed",
+  "answer_strategy": "structured",
   "confidence_level": 4,
+  "confidence": 0.8,
   "tone": "collaborative"
 }
 ```

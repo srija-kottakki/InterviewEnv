@@ -40,7 +40,14 @@ def fallback_action(task_id: str, step: int, prompt: str) -> ActionModel:
     answer = answers[task_id][min(step, len(answers[task_id]) - 1)]
     confidence = {"easy": 4, "medium": 4, "hard": 3}[task_id]
     tone = "collaborative" if "team" in prompt.lower() or task_id == "hard" else "confident"
-    return ActionModel(answer=answer, answer_strategy="detailed", confidence_level=confidence, tone=tone)
+    return ActionModel(
+        answer=answer,
+        answer_strategy="structured",
+        strategy="structured",
+        confidence_level=confidence,
+        confidence=confidence / 5,
+        tone=tone,
+    )
 
 
 def model_action(client: OpenAI, task_id: str, step: int, prompt: str, history: list[dict[str, str]]) -> ActionModel:

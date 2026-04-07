@@ -17,6 +17,7 @@ const difficulty = document.querySelector("#difficulty");
 const adaptiveLevel = document.querySelector("#adaptiveLevel");
 const stressLevel = document.querySelector("#stressLevel");
 const scoreTrend = document.querySelector("#scoreTrend");
+const averageScore = document.querySelector("#averageScore");
 const feedbackViewer = document.querySelector("#feedbackViewer");
 const resumeViewer = document.querySelector("#resumeViewer");
 const errorBox = document.querySelector("#error");
@@ -80,6 +81,7 @@ function renderState(state) {
   adaptiveLevel.textContent = String(state.current_difficulty);
   stressLevel.textContent = Number(state.stress_level || 0).toFixed(2);
   scoreTrend.textContent = state.score_trend || "flat";
+  averageScore.textContent = Number(state.learning_metrics?.average_score || 0).toFixed(2);
   done.textContent = String(state.done);
   currentHistory = state.history;
   renderChat();
@@ -87,6 +89,7 @@ function renderState(state) {
   renderJson(feedbackViewer, {
     behavioral_feedback: state.behavioral_feedback,
     reward_breakdown: state.reward_breakdown,
+    learning_metrics: state.learning_metrics,
     last_action: state.last_action,
     score_history: state.score_history,
     adaptive_reason: state.adaptive_reason,
@@ -177,7 +180,9 @@ answerForm.addEventListener("submit", async (event) => {
       body: JSON.stringify({
         answer: message,
         answer_strategy: strategySelect.value,
+        strategy: strategySelect.value,
         confidence_level: Number(confidenceSelect.value),
+        confidence: Number(confidenceSelect.value) / 5,
         tone: toneSelect.value,
       }),
     });

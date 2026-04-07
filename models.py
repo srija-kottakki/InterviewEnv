@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 TaskId = Literal["easy", "medium", "hard"]
-AnswerStrategy = Literal["direct", "detailed", "clarify", "skip"]
+AnswerStrategy = Literal["direct", "detailed", "structured", "concise", "default", "clarify", "skip"]
 Tone = Literal["neutral", "confident", "collaborative", "defensive"]
 
 
@@ -20,10 +20,28 @@ class ActionModel(BaseModel):
         description="RL action choice controlling how the candidate approaches the answer.",
     )
     confidence_level: int = Field(default=3, ge=1, le=5, description="Self-reported confidence from 1 to 5.")
+    confidence: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Backward-compatible continuous confidence value from 0.0 to 1.0.",
+    )
+    strategy: AnswerStrategy = Field(
+        default="default",
+        description="Backward-compatible strategy alias; mapped to answer_strategy when provided.",
+    )
     tone: Tone = Field(default="neutral", description="Candidate delivery tone.")
 
     def text(self) -> str:
         return (self.answer or self.message).strip()
+
+    def normalized_strategy(self) -> AnswerStrategy:
+        if self.strategy != "default":
+            return self.strategy
+        return self.answer_strategy
+
+    def normalized_confidence(self) -> float:
+        return max(self.confidence, self.confidence_level / 5.0)
 
 
 class ObservationModel(BaseModel):
@@ -49,6 +67,7 @@ class ObservationModel(BaseModel):
     reward_breakdown: dict[str, float] = Field(default_factory=dict)
     performance_history: list[dict[str, object]] = Field(default_factory=list)
     last_action: dict[str, object] = Field(default_factory=dict)
+    learning_metrics: dict[str, float] = Field(default_factory=dict)
 
 
 class StateModel(BaseModel):
@@ -76,6 +95,7 @@ class StateModel(BaseModel):
     adaptivity_factor: float = 0.0
     reward_breakdown: dict[str, float] = Field(default_factory=dict)
     last_action: dict[str, object] = Field(default_factory=dict)
+    learning_metrics: dict[str, float] = Field(default_factory=dict)
     score: float = 0.0
     success: bool = False
     quality_label: Optional[Literal["poor", "avg", "good"]] = None
