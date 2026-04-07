@@ -22,13 +22,31 @@ def _length_credit(text: str, target_words: int) -> float:
     return min(len(text.split()) / target_words, 1.0)
 
 
-def relevance_score(answer: str, state: dict) -> float:
-    task_id = state.get("task_id", "easy")
+def _resume_match_score(answer: str, state: dict) -> float:
     parsed_resume = state.get("parsed_resume_data", {}) or {}
     resume_terms = []
     for key in ("skills", "programming_languages", "libraries_frameworks", "tools", "tools_technologies"):
         resume_terms.extend(parsed_resume.get(key, []) or [])
-    resume_bonus = 0.15 if _contains_any(answer, [str(term) for term in resume_terms]) else 0.0
+    if not resume_terms:
+        return 0.0
+    matches = sum(1 for term in resume_terms if term and _contains_any(answer, [str(term)]))
+    return min(matches / 2.0, 1.0)
+
+
+def _star_bonus(answer: str) -> float:
+    groups = [
+        ["situation", "context", "challenge", "conflict"],
+        ["task", "responsibility", "goal"],
+        ["action", "i did", "i built", "i led", "i communicated"],
+        ["result", "outcome", "impact", "measured", "improved"],
+        ["learned", "feedback", "next time", "reflection"],
+    ]
+    return _keyword_fraction(answer, groups)
+
+
+def relevance_score(answer: str, state: dict) -> float:
+    task_id = state.get("task_id", "easy")
+    resume_match = _resume_match_score(answer, state)
     groups_by_task = {
         "easy": [
             ["interview", "role", "company", "position", "team"],
@@ -49,11 +67,19 @@ def relevance_score(answer: str, state: dict) -> float:
             ["learned", "reflection", "feedback", "metric", "measured"],
         ],
     }
-    return _clamp(0.65 * _keyword_fraction(answer, groups_by_task[task_id]) + 0.20 * _length_credit(answer, 55) + resume_bonus)
+    base = _keyword_fraction(answer, groups_by_task[task_id])
+    length = _length_credit(answer, {"easy": 35, "medium": 60, "hard": 85}[task_id])
+    if task_id == "easy":
+        score = 0.50 * base + 0.30 * length + 0.20 * resume_match
+    elif task_id == "medium":
+        score = 0.50 * base + 0.25 * length + 0.25 * resume_match
+    else:
+        score = 0.45 * base + 0.20 * length + 0.20 * _star_bonus(answer) + 0.15 * resume_match
+    return _clamp(score)
 
 
 def classify_quality(answer: str) -> str:
-    score = grade_medium(answer, {})
+    score = grade_medium(answer, {"task_id": "medium"})
     if score >= 0.7:
         return "good"
     if score >= 0.35:
@@ -65,21 +91,21 @@ def grade_easy(answer: str, state: dict) -> float:
     """Easy: detect whether the answer contains role/interview-relevant keywords."""
     feedback = analyze_behavior(answer, state)
     relevance = relevance_score(answer, {**state, "task_id": "easy"})
-    return _clamp((float(feedback["clarity_score"]) + float(feedback["confidence_score"]) + relevance) / 3.0)
+    return _clamp(0.30 * float(feedback["clarity_score"]) + 0.25 * float(feedback["confidence_score"]) + 0.45 * relevance)
 
 
 def grade_medium(answer: str, state: dict) -> float:
     """Medium: classify answer quality using structure, specificity, and reflection."""
     feedback = analyze_behavior(answer, state)
     relevance = relevance_score(answer, {**state, "task_id": "medium"})
-    return _clamp((float(feedback["clarity_score"]) + float(feedback["confidence_score"]) + relevance) / 3.0)
+    return _clamp(0.35 * float(feedback["clarity_score"]) + 0.25 * float(feedback["confidence_score"]) + 0.40 * relevance)
 
 
 def grade_hard(answer: str, state: dict) -> float:
     """Hard: open-ended STAR/rubric evaluation scored from 0.0 to 1.0."""
     feedback = analyze_behavior(answer, state)
     relevance = relevance_score(answer, {**state, "task_id": "hard"})
-    return _clamp((float(feedback["clarity_score"]) + float(feedback["confidence_score"]) + relevance) / 3.0)
+    return _clamp(0.40 * float(feedback["clarity_score"]) + 0.20 * float(feedback["confidence_score"]) + 0.40 * relevance)
 
 
 GRADERS = {

@@ -93,7 +93,7 @@ graders:
 reward:
   type: float
   range: [0.0, 1.0]
-  formula: "reward = grader_score = (clarity_score + confidence_score + relevance_score) / 3"
+  formula: "reward = grader_score; grader_score is calibrated from clarity, confidence, relevance, resume match, and rubric evidence"
   partial_credit: true
   termination: "Episode terminates on success or after max_steps."
 

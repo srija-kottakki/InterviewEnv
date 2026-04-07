@@ -96,10 +96,10 @@ Defined in `models.py`:
 Reward is exactly the selected grader score:
 
 ```text
-reward = grader_score = (clarity_score + confidence_score + relevance_score) / 3
+reward = grader_score
 ```
 
-Partial credit is supported. Episodes terminate when the score reaches the task threshold or when max steps are exhausted. Behavioral feedback includes filler usage, confidence, clarity, and comments.
+The grader uses calibrated task-specific weights over clarity, confidence, relevance, resume match, and STAR/rubric evidence. Partial credit is supported. Episodes terminate when the score reaches the task threshold or when max steps are exhausted. Behavioral feedback includes filler usage, confidence, clarity, and comments.
 
 ## Run Locally
 
