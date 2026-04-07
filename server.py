@@ -26,6 +26,11 @@ class ResetRequest(BaseModel):
 
 @app.get("/")
 def root():
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/metadata")
+def metadata():
     return {
         "name": "InterviewEnv",
         "version": "1.0.0",

@@ -49,8 +49,9 @@ Very short or generic answers are penalized.
 
 ## API
 
-- `GET /` returns API metadata
+- `GET /` opens the browser UI
 - `GET /ui` opens the browser UI
+- `GET /metadata` returns API metadata
 - `GET /api` returns the API metadata previously shown at `/`
 - `POST /reset` starts an episode for a task
 - `GET /reset?task_id=easy` starts an episode for a task

@@ -112,6 +112,7 @@ api:
   state: "GET /state"
   tasks: "GET /tasks"
   ui: "GET /ui"
+  metadata: "GET /metadata"
 
 response_schema:
   reset:
