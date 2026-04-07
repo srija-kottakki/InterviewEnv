@@ -1,126 +1,82 @@
-name: interview-env
+name: InterviewEnv
 version: "1.0.0"
-description: >
-  A real-world OpenEnv environment that trains an AI agent to improve interview performance.
-  The agent must infer hidden evaluation criteria from interviewer questions and adapt in real time.
-
-author: "Kottakki Sai Srija"
-tags: [interview, hiring, career, education, communication, openenv]
+description: "API-only OpenEnv environment for deterministic interview-answer evaluation."
+entrypoint: main:app
+runtime: docker
 
 tasks:
   - id: easy
-    name: "HR Round - Cultural Fit"
-    description: >
-      The agent is interviewed for a junior engineering role.
-      The interviewer mainly values cultural fit and collaborative growth mindset.
-    max_turns: 5
+    name: "Basic interview question answering"
     difficulty: easy
+    description: "Answer a single introductory interview question with relevant details."
+    max_turns: 2
     pass_threshold: 0.55
-    grader: grade_easy
+    grader: env.graders.grade_easy
   - id: medium
-    name: "Technical Round - Depth, Clarity & Honesty"
-    description: >
-      The agent is interviewed for a backend role and must balance technical depth,
-      structured communication, and honest self-awareness.
-    max_turns: 8
+    name: "Multi-turn follow-up reasoning"
     difficulty: medium
-    pass_threshold: 0.60
-    grader: grade_medium
+    description: "Answer follow-up interview questions with structured reasoning and adaptation."
+    max_turns: 3
+    pass_threshold: 0.62
+    grader: env.graders.grade_medium
   - id: hard
-    name: "Stress Interview - Composure & Evidence"
-    description: >
-      The agent faces adversarial pushback and must stay calm, specific, and evidence-driven.
-    max_turns: 12
+    name: "Behavioral STAR-format interview simulation"
     difficulty: hard
-    pass_threshold: 0.65
-    grader: grade_hard
+    description: "Use situation, task, action, and result structure for behavioral interview answers."
+    max_turns: 4
+    pass_threshold: 0.70
+    grader: env.graders.grade_hard
 
 action_space:
-  type: text
-  model: InterviewAction
-  description: "The candidate's spoken response to the interviewer."
+  type: object
+  model: env.models.InterviewAction
   fields:
-    - name: message
+    message:
       type: string
-      description: "Candidate answer for the current turn."
+      description: "Candidate answer for the current interview prompt."
 
 observation_space:
-  type: structured
-  model: InterviewObservation
+  type: object
+  model: env.models.InterviewState
   fields:
-    - name: interviewer_message
+    task_id:
       type: string
-      description: "The latest prompt or response from the interviewer."
-    - name: turn
-      type: integer
-      description: "Current turn number."
-    - name: max_turns
-      type: integer
-      description: "Maximum turns for the active task."
-    - name: task_id
+    difficulty:
       type: string
-      description: "Active task identifier."
-    - name: done
+    turn:
+      type: integer
+    max_turns:
+      type: integer
+    prompt:
+      type: string
+    history:
+      type: array
+    done:
       type: boolean
-      description: "Whether the episode has ended."
-    - name: feedback
-      type: string
-      nullable: true
-      description: "End-of-episode rubric feedback."
 
 reward:
-  type: continuous
+  type: float
   range: [0.0, 1.0]
-  model: InterviewReward
-  description: >
-    Partial reward is emitted every turn using rubric alignment, specificity,
-    and recovery after weak responses, with penalties for generic answers.
-  fields:
-    - name: reward
-      type: float
-      description: "Combined reward for the current step."
-    - name: rubric_score
-      type: float
-      description: "Alignment with the hidden rubric."
-    - name: recovery_score
-      type: float
-      description: "Bonus for recovering after a weak turn."
-    - name: specificity_score
-      type: float
-      description: "How concrete and evidence-based the response is."
-
-typed_models:
-  action: models.InterviewAction
-  observation: models.InterviewObservation
-  state: models.InterviewState
-  reward: models.InterviewReward
-
-graders:
-  easy: grade_easy
-  medium: grade_medium
-  hard: grade_hard
-
-environment:
-  real_world_task: true
-  deterministic: true
-  episodic: true
-  multi_turn: true
+  function: "reward equals deterministic task grader score for the latest answer."
 
 api:
-  reset: "GET /reset or POST /reset"
-  step: "POST /step"
-  state: "GET /state"
-  tasks: "GET /tasks"
-  ui: "GET /ui"
-  metadata: "GET /metadata"
-
-response_schema:
   reset:
-    state: InterviewObservation
-    info: dict
+    method: GET
+    path: /reset
+    response: '{"state": {...}, "info": {...}}'
+  reset_post:
+    method: POST
+    path: /reset
+    response: '{"state": {...}, "info": {...}}'
   step:
-    state: InterviewObservation
-    reward: float
-    done: boolean
-    info: dict
-  state: InterviewState
+    method: POST
+    path: /step
+    response: '{"state": {...}, "reward": 0.0, "done": false, "info": {...}}'
+  state:
+    method: GET
+    path: /state
+    response: '{"state": {...}}'
+
+deterministic: true
+supports_partial_reward: true
+baseline: inference.py

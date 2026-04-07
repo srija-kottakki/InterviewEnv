@@ -1,129 +1,101 @@
 ---
 title: InterviewEnv
-emoji: "🤗"
+emoji: "🎙️"
 colorFrom: blue
 colorTo: indigo
 sdk: docker
 pinned: false
 ---
+
 # InterviewEnv
 
-InterviewEnv is a real-world OpenEnv environment where an AI agent plays the role of a job candidate in a multi-turn interview. The interviewer uses a hidden rubric, and the agent must infer what is being evaluated from the questions, then adapt its answers over time.
+InterviewEnv is an API-only OpenEnv Round 1 environment for deterministic interview-answer evaluation. It exposes strict `/reset`, `/step`, and `/state` endpoints and includes three tasks with increasing difficulty.
+
+## API Contract
+
+`GET /reset?task_id=easy` or `POST /reset`
+
+```json
+{"state": {}, "info": {}}
+```
+
+`POST /step`
+
+```json
+{"state": {}, "reward": 0.0, "done": false, "info": {}}
+```
+
+`GET /state`
+
+```json
+{"state": {}}
+```
+
+No UI or Gradio app is launched.
 
 ## Tasks
 
-| Task | Focus | Max Turns | Pass Threshold |
-|---|---|---:|---:|
-| `easy` | Cultural fit and teamwork | 5 | 0.55 |
-| `medium` | Technical depth, clarity, and honesty | 8 | 0.60 |
-| `hard` | Composure, evidence, and pushback handling | 12 | 0.65 |
+| Task | Difficulty | Description | Grader |
+|---|---|---|---|
+| `easy` | easy | Basic interview question answering | `grade_easy` |
+| `medium` | medium | Multi-turn follow-up reasoning | `grade_medium` |
+| `hard` | hard | Behavioral STAR-format interview simulation | `grade_hard` |
 
 ## Action Space
 
-```python
-class InterviewAction(BaseModel):
-    message: str
+```json
+{"message": "candidate answer"}
 ```
 
-## Observation Space
+The action model is `env.models.InterviewAction`.
 
-```python
-class InterviewObservation(BaseModel):
-    interviewer_message: str
-    turn: int
-    max_turns: int
-    task_id: str
-    done: bool
-    feedback: Optional[str]
+## Observation / State Space
+
+The state model is `env.models.InterviewState`:
+
+```json
+{
+  "task_id": "easy",
+  "difficulty": "easy",
+  "turn": 0,
+  "max_turns": 2,
+  "prompt": "Tell me about yourself...",
+  "history": [],
+  "done": false
+}
 ```
 
 ## Reward
 
-Each step returns a reward in the `0.0` to `1.0` range. The reward combines:
+Reward is exactly the deterministic grader score for the latest answer. Each grader returns a float in `[0.0, 1.0]` using keyword matching and answer completeness criteria.
 
-- rubric alignment
-- answer specificity
-- recovery after weak turns
-
-Very short or generic answers are penalized.
-
-## API
-
-- `GET /` opens the browser UI
-- `GET /ui` opens the browser UI
-- `GET /metadata` returns API metadata
-- `GET /api` returns the API metadata previously shown at `/`
-- `POST /reset` starts an episode for a task
-- `GET /reset?task_id=easy` starts an episode for a task
-- `POST /step` submits the candidate response
-- `GET /state` returns current environment state
-- `GET /tasks` lists available tasks
-
-Strict OpenEnv response shapes:
-
-```json
-{
-  "reset": {"state": {}, "info": {}},
-  "step": {"state": {}, "reward": 0.0, "done": false, "info": {}}
-}
-```
-
-## UI
-
-The Hugging Face Space serves a lightweight browser UI from `static/`. It lets you choose an interview task, start/reset an episode, submit candidate responses, and view live reward/rubric/specificity feedback.
-
-## Setup
+## Run Locally
 
 ```bash
 pip install -r requirements.txt
-uvicorn server:app --host 0.0.0.0 --port 7860
+uvicorn main:app --host 0.0.0.0 --port 7860
 ```
 
-## Inference
-
-The baseline script must be named `inference.py` and lives at the project root for validator compatibility.
-
-Required environment variables:
-
-- `API_BASE_URL`: model endpoint compatible with the OpenAI client
-- `MODEL_NAME`: model identifier for inference
-- `HF_TOKEN`: Hugging Face token or API key
-
-Example:
+## Baseline Inference
 
 ```bash
 export API_BASE_URL=https://router.huggingface.co/v1
 export MODEL_NAME=gpt-4o-mini
 export HF_TOKEN=your_token
-
 python inference.py
 ```
 
-The script uses the OpenAI Python client for model calls and emits structured stdout blocks marked with `[START]`, `[STEP]`, and `[END]`.
-
-Sample output format:
+If `HF_TOKEN` is not set, the script uses deterministic fallback answers. Logs are emitted exactly as:
 
 ```text
-[START] {"type":"START","task_id":"easy","max_turns":5,"interviewer_opening":"Hi! Thanks for coming in today..."}
-[STEP] {"type":"STEP","task_id":"easy","turn":1,"candidate_message":"...","interviewer_message":"...","reward":0.543,"rubric_score":1.0,"specificity_score":0.55,"done":false}
-[END] {"type":"END","task_id":"easy","final_score":0.865,"avg_reward":0.612,"total_turns":5,"feedback":"Interview complete..."}
+[START] {"task_id":"easy","state":{},"info":{}}
+[STEP] {"task_id":"easy","step":1,"action":{"message":"..."},"state":{},"reward":0.5,"done":false,"info":{}}
+[END] {"task_id":"easy","score":0.5,"steps":2,"done":true}
 ```
 
 ## Docker
 
 ```bash
 docker build -t interview-env .
-docker run -p 7860:7860 \
-  -e API_BASE_URL=https://router.huggingface.co/v1 \
-  -e MODEL_NAME=gpt-4o-mini \
-  -e HF_TOKEN=your_token \
-  interview-env
+docker run -p 7860:7860 interview-env
 ```
-
-## Project Files
-
-- `environment.py`: environment logic, typed models, and graders
-- `server.py`: FastAPI app exposing `/reset`, `/step`, `/state`, and `/tasks`
-- `openenv.yaml`: OpenEnv metadata and space definitions
-- `inference.py`: reproducible baseline runner
-- `Dockerfile`: container entrypoint for deployment

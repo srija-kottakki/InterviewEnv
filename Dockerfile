@@ -13,4 +13,4 @@ ENV API_BASE_URL="https://router.huggingface.co/v1"
 ENV MODEL_NAME="gpt-4o-mini"
 ENV HF_TOKEN=""
 
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
