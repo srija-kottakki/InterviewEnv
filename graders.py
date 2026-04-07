@@ -1,63 +1,69 @@
 from __future__ import annotations
 
 
+def _clamp(value: float) -> float:
+    return round(min(max(value, 0.0), 1.0), 4)
+
+
 def _contains_any(text: str, keywords: list[str]) -> bool:
-    text_lower = text.lower()
-    return any(keyword in text_lower for keyword in keywords)
+    lowered = text.lower()
+    return any(keyword in lowered for keyword in keywords)
 
 
-def _word_score(text: str, target_words: int) -> float:
-    return min(len(text.split()) / target_words, 1.0)
-
-
-def _keyword_score(text: str, groups: list[list[str]]) -> float:
+def _keyword_fraction(text: str, groups: list[list[str]]) -> float:
     if not groups:
         return 0.0
     return sum(1 for group in groups if _contains_any(text, group)) / len(groups)
 
 
-def _clamp(score: float) -> float:
-    return round(min(max(score, 0.0), 1.0), 4)
+def _length_credit(text: str, target_words: int) -> float:
+    return min(len(text.split()) / target_words, 1.0)
+
+
+def classify_quality(answer: str) -> str:
+    score = grade_medium(answer, {})
+    if score >= 0.7:
+        return "good"
+    if score >= 0.35:
+        return "avg"
+    return "poor"
 
 
 def grade_easy(answer: str, state: dict) -> float:
-    groups = [
-        ["experience", "project", "worked", "built", "learned", "created"],
-        ["role", "company", "team", "mission", "interest", "excited"],
-        ["strength", "skill", "communication", "collaboration", "ownership", "problem"],
+    """Easy: detect whether the answer contains role/interview-relevant keywords."""
+    keyword_groups = [
+        ["interview", "role", "company", "position", "team"],
+        ["experience", "project", "built", "worked", "created"],
+        ["skill", "strength", "communication", "collaboration", "ownership"],
     ]
-    score = 0.55 * _keyword_score(answer, groups) + 0.35 * _word_score(answer, 45)
-    if _contains_any(answer, ["for example", "specifically", "because"]):
-        score += 0.10
+    score = 0.75 * _keyword_fraction(answer, keyword_groups) + 0.25 * _length_credit(answer, 35)
     return _clamp(score)
 
 
 def grade_medium(answer: str, state: dict) -> float:
-    groups = [
-        ["first", "then", "finally", "step", "approach", "structured"],
-        ["because", "tradeoff", "decision", "chose", "reason", "constraint"],
-        ["measure", "metric", "result", "impact", "tested", "validated"],
-        ["improve", "learned", "different", "next time", "iterate", "feedback"],
+    """Medium: classify answer quality using structure, specificity, and reflection."""
+    keyword_groups = [
+        ["first", "then", "finally", "because", "approach"],
+        ["specific", "for example", "project", "measured", "result"],
+        ["tradeoff", "constraint", "decision", "impact", "validated"],
+        ["learned", "improve", "feedback", "next time", "would"],
     ]
-    score = 0.60 * _keyword_score(answer, groups) + 0.25 * _word_score(answer, 65)
-    if len(state.get("history", [])) >= 3 and _contains_any(answer, ["as i mentioned", "building on", "to improve", "follow-up"]):
-        score += 0.10
-    if _contains_any(answer, ["i don't know", "still learning", "would ask", "would research"]):
-        score += 0.05
+    score = 0.65 * _keyword_fraction(answer, keyword_groups) + 0.35 * _length_credit(answer, 65)
     return _clamp(score)
 
 
 def grade_hard(answer: str, state: dict) -> float:
-    groups = [
-        ["situation", "context", "when", "challenge", "conflict"],
+    """Hard: open-ended STAR/rubric evaluation scored from 0.0 to 1.0."""
+    rubric_groups = [
+        ["situation", "context", "challenge", "conflict", "when"],
         ["task", "responsibility", "goal", "needed", "expected"],
-        ["action", "i did", "i worked", "i communicated", "i decided"],
-        ["result", "outcome", "impact", "learned", "improved", "resolved"],
-        ["specific", "for example", "measured", "feedback", "metric"],
+        ["action", "i did", "i worked", "i decided", "i communicated"],
+        ["result", "outcome", "impact", "resolved", "improved"],
+        ["learned", "reflection", "feedback", "metric", "measured"],
     ]
-    score = 0.65 * _keyword_score(answer, groups) + 0.25 * _word_score(answer, 80)
+    score = 0.75 * _keyword_fraction(answer, rubric_groups) + 0.25 * _length_credit(answer, 90)
     if _contains_any(answer, ["star", "situation", "task", "action", "result"]):
-        score += 0.10
+        score += 0.05
     return _clamp(score)
 
 

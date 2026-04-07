@@ -1,14 +1,28 @@
-from models import Action, InterviewAction, InterviewState, Metadata, Observation, ResetRequest, ResetResponse, StateResponse, StepResponse
+from models import (
+    Action,
+    ActionModel,
+    InterviewAction,
+    InterviewState,
+    Metadata,
+    MetadataModel,
+    Observation,
+    ObservationModel,
+    ResetRequest,
+    StateModel,
+    StepResponseModel,
+)
 
 
 __all__ = [
     "Action",
+    "ActionModel",
     "InterviewAction",
     "InterviewState",
     "Metadata",
+    "MetadataModel",
     "Observation",
+    "ObservationModel",
     "ResetRequest",
-    "ResetResponse",
-    "StateResponse",
-    "StepResponse",
+    "StateModel",
+    "StepResponseModel",
 ]

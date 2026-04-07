@@ -69,14 +69,14 @@ function renderState(state) {
   done.textContent = String(state.done);
   currentHistory = state.history;
   renderChat();
-  renderJson(stateViewer, { state });
+  renderJson(stateViewer, state);
   answerInput.disabled = state.done;
   submitButton.disabled = state.done;
 }
 
 async function refreshState() {
   const data = await request("/state");
-  renderState(data.state);
+  renderState(data);
 }
 
 async function refreshMetadata() {
@@ -98,9 +98,9 @@ resetButton.addEventListener("click", async () => {
   setError();
   try {
     const data = await request(`/reset?task_id=${encodeURIComponent(taskSelect.value)}`);
-    renderState(data.state);
+    renderState(data);
     reward.textContent = "--";
-    renderJson(metadataViewer, data.info);
+    renderJson(metadataViewer, { reset: data });
   } catch (error) {
     setError(error.message);
   } finally {
@@ -123,7 +123,8 @@ answerForm.addEventListener("submit", async (event) => {
       method: "POST",
       body: JSON.stringify({ message }),
     });
-    renderState(data.state);
+    const state = await request("/state");
+    renderState(state);
     reward.textContent = data.reward.toFixed(4);
     done.textContent = String(data.done);
     renderJson(metadataViewer, data.info);

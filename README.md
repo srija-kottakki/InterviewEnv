@@ -9,75 +9,89 @@ pinned: false
 
 # InterviewEnv
 
-InterviewEnv is an OpenEnv Round 1 environment for deterministic interview-answer evaluation. It exposes strict validator endpoints, typed Pydantic models, three increasing-difficulty tasks, deterministic graders, and an optional browser UI for manual testing.
+InterviewEnv is a Meta OpenEnv Round 1 submission for interview-answer evaluation. It provides typed Pydantic models, deterministic graders, three tasks with increasing difficulty, a FastAPI backend, a baseline OpenAI-client inference script, and an optional UI for manual testing.
 
-## File Structure
+## Folder Structure
 
 ```text
 InterviewEnv/
-├── app.py
-├── main.py
+├── api/
+│   ├── __init__.py
+│   └── main.py
+├── env/
+│   ├── __init__.py
+│   ├── env.py
+│   ├── graders.py
+│   ├── models.py
+│   └── tasks.py
+├── ui/
+├── docs/
+├── examples/
+├── screenshots/
 ├── models.py
 ├── graders.py
 ├── inference.py
 ├── openenv.yaml
 ├── launch.sh
 ├── Dockerfile
-├── requirements.txt
-├── env/
-├── ui/
-├── docs/
-├── examples/
-└── screenshots/
+└── requirements.txt
 ```
 
-## OpenEnv API Contract
+## Tasks
 
-`GET /reset?task_id=easy` or `POST /reset`
+| Task | Difficulty | Goal | Grader |
+|---|---|---|---|
+| `easy` | easy | Detect correct interview keywords | `grade_easy()` |
+| `medium` | medium | Classify answer quality as poor/avg/good | `grade_medium()` |
+| `hard` | hard | Score open-ended behavioral answer with rubric | `grade_hard()` |
 
-```json
-{"state": {}, "info": {}}
-```
+## API
+
+`GET /reset?task_id=easy`
+
+Returns `StateModel`.
 
 `POST /step`
 
+Request:
+
 ```json
-{"state": {}, "reward": 0.0, "done": false, "info": {}}
+{"message": "candidate answer"}
+```
+
+Returns:
+
+```json
+{"observation": {}, "reward": 0.0, "done": false, "info": {}}
 ```
 
 `GET /state`
 
-```json
-{"state": {}}
-```
+Returns `StateModel`.
 
-`GET /metadata` returns environment metadata, task definitions, model names, endpoint descriptions, and reward details.
+`GET /metadata`
 
-The validator endpoints stay API-first. The optional UI is available at `GET /` and `GET /ui/`.
+Returns `MetadataModel` with `env_id`, `version`, `authors`, schemas, and task list.
 
-## Tasks
+## Models
 
-| Task | Difficulty | Description | Grader |
-|---|---|---|---|
-| `easy` | easy | Basic interview question answering | `graders.grade_easy` |
-| `medium` | medium | Multi-turn follow-up reasoning | `graders.grade_medium` |
-| `hard` | hard | Behavioral STAR-format interview simulation | `graders.grade_hard` |
+Defined in `models.py`:
 
-## Typed Models
-
-The public Pydantic models live in `models.py`:
-
-- `Action`
-- `Observation`
-- `Metadata`
-- `ResetRequest`
-- `ResetResponse`
-- `StepResponse`
-- `StateResponse`
+- `ActionModel`
+- `ObservationModel`
+- `StateModel`
+- `MetadataModel`
+- `StepResponseModel`
 
 ## Reward
 
-Reward is exactly the selected deterministic grader score for the latest action. Each grader returns a float in `[0.0, 1.0]` based on keyword matching and answer completeness.
+Reward is exactly the selected grader score:
+
+```text
+reward = grader_score
+```
+
+Partial credit is supported. Episodes terminate when the score reaches the task threshold or when max steps are exhausted.
 
 ## Run Locally
 
@@ -86,13 +100,13 @@ pip install -r requirements.txt
 ./launch.sh
 ```
 
-Open:
+Open the optional UI:
 
 ```text
 http://localhost:7860
 ```
 
-## Baseline Inference
+## Inference
 
 ```bash
 export API_BASE_URL=https://router.huggingface.co/v1
@@ -101,23 +115,17 @@ export HF_TOKEN=your_token
 python inference.py
 ```
 
-If `HF_TOKEN` is not set, `inference.py` uses deterministic fallback answers. Logs are emitted as:
+The script uses the OpenAI client and emits:
 
 ```text
-[START] {"task_id":"easy","state":{},"info":{}}
-[STEP] {"task_id":"easy","step":1,"action":{"message":"..."},"state":{},"reward":0.5,"done":false,"info":{}}
+[START]
+[STEP] {"task_id":"easy","step":1,"action":{"message":"..."},"observation":{},"reward":0.5,"done":false,"info":{}}
 [END] {"task_id":"easy","score":0.5,"steps":2,"done":true}
 ```
 
-## Docker / Hugging Face Space
+## Docker / Hugging Face
 
 ```bash
 docker build -t interview-env .
 docker run -p 7860:7860 interview-env
-```
-
-The Docker container launches:
-
-```bash
-./launch.sh
 ```

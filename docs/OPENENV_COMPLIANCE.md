@@ -1,8 +1,8 @@
 # OpenEnv Compliance
 
-- Strict reset response: `{"state": {...}, "info": {...}}`
-- Strict step response: `{"state": {...}, "reward": float, "done": boolean, "info": {...}}`
-- Strict state response: `{"state": {...}}`
+- Typed reset response: `StateModel`
+- Typed step response: `{"observation": ObservationModel, "reward": float, "done": boolean, "info": {...}}`
+- Typed state response: `StateModel`
 - Typed Pydantic models: `models.py`
 - Three tasks: `easy`, `medium`, `hard`
 - Deterministic graders: `graders.py`

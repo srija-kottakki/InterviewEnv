@@ -1,72 +1,80 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+TaskId = Literal["easy", "medium", "hard"]
+
+
+class ActionModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(..., description="Candidate answer submitted by the agent.")
+
+
+class ObservationModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    task_id: TaskId
+    difficulty: TaskId
+    turn: int
+    max_turns: int
+    prompt: str
+    done: bool
+    last_answer: Optional[str] = None
+    quality_label: Optional[Literal["poor", "avg", "good"]] = None
+
+
+class StateModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    task_id: TaskId
+    difficulty: TaskId
+    turn: int
+    max_turns: int
+    prompt: str
+    done: bool
+    history: list[dict[str, str]]
+    score: float = 0.0
+    success: bool = False
+    quality_label: Optional[Literal["poor", "avg", "good"]] = None
+
+
+class MetadataModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    env_id: str
+    version: str
+    authors: list[str]
+    description: str
+    action_schema: dict
+    observation_schema: dict
+    state_schema: dict
+    tasks: list[dict]
+    graders: dict[str, str]
+    api: dict[str, str]
 
 
 class ResetRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    task_id: str = Field(default="easy", description="Task id to start: easy, medium, or hard.")
+    task_id: TaskId = "easy"
 
 
-class Action(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    message: str = Field(default="", description="Candidate answer for the current interview prompt.")
-    answer: Optional[str] = Field(default=None, description="Optional alias for message used by some clients.")
-
-    def text(self) -> str:
-        return (self.answer if self.answer is not None else self.message).strip()
-
-
-class Observation(BaseModel):
+class StepResponseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    task_id: str
-    difficulty: str
-    turn: int
-    max_turns: int
-    prompt: str
-    history: list[dict[str, str]]
-    done: bool
-
-
-class Metadata(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    name: str
-    version: str
-    description: str
-    tasks: list[dict]
-    action_model: str
-    observation_model: str
-    endpoints: dict[str, str]
-    reward: dict[str, object]
-
-
-class ResetResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    state: Observation
-    info: dict
-
-
-class StepResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    state: Observation
+    observation: ObservationModel
     reward: float
     done: bool
     info: dict
 
 
-class StateResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    state: Observation
-
-
-InterviewAction = Action
-InterviewState = Observation
+# Backward-compatible aliases for earlier local imports.
+Action = ActionModel
+Observation = ObservationModel
+InterviewAction = ActionModel
+InterviewState = StateModel
+Metadata = MetadataModel

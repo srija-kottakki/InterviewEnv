@@ -8,11 +8,7 @@ Query parameters:
 
 - `task_id`: `easy`, `medium`, or `hard`
 
-Response:
-
-```json
-{"state": {}, "info": {}}
-```
+Response: `StateModel`
 
 ## POST /step
 
@@ -27,18 +23,14 @@ Request:
 Response:
 
 ```json
-{"state": {}, "reward": 0.0, "done": false, "info": {}}
+{"observation": {}, "reward": 0.0, "done": false, "info": {}}
 ```
 
 ## GET /state
 
 Returns current state.
 
-Response:
-
-```json
-{"state": {}}
-```
+Response: `StateModel`
 
 ## GET /metadata
 

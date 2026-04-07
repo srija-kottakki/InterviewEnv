@@ -1,114 +1,108 @@
-name: InterviewEnv
+env_id: "InterviewEnv"
+name: "InterviewEnv"
 version: "1.0.0"
-description: "OpenEnv Round 1 interview-answer environment with deterministic typed API, graders, and optional UI."
-entrypoint: app:app
-runtime: docker
-author: "Kottakki Sai Srija"
-license: MIT
-tags:
-  - openenv
-  - interview
-  - evaluation
-  - meta-hackathon
-
-environment:
-  class: env.env.InterviewEnv
-  deterministic: true
-  episodic: true
-  supports_partial_reward: true
+description: "Meta OpenEnv Round 1 interview-answer environment with typed models, deterministic graders, and optional UI."
+entrypoint: "api.main:app"
+runtime: "docker"
+authors:
+  - "Kottakki Sai Srija"
 
 tasks:
   - id: easy
-    name: "Basic interview question answering"
+    name: "Keyword detection in an interview answer"
     difficulty: easy
-    description: "Answer a single introductory interview question with relevant details."
-    max_turns: 2
-    pass_threshold: 0.55
-    grader: graders.grade_easy
+    description: "Detect whether the answer includes role-relevant interview keywords."
+    max_steps: 2
+    success_threshold: 0.55
+    grader: "graders.grade_easy"
   - id: medium
-    name: "Multi-turn follow-up reasoning"
+    name: "Classify answer quality"
     difficulty: medium
-    description: "Answer follow-up interview questions with structured reasoning and adaptation."
-    max_turns: 3
-    pass_threshold: 0.62
-    grader: graders.grade_medium
+    description: "Classify interview answer quality as poor, average, or good using structure and specificity."
+    max_steps: 3
+    success_threshold: 0.65
+    grader: "graders.grade_medium"
   - id: hard
-    name: "Behavioral STAR-format interview simulation"
+    name: "Open-ended behavioral rubric evaluation"
     difficulty: hard
-    description: "Use situation, task, action, and result structure for behavioral interview answers."
-    max_turns: 4
-    pass_threshold: 0.70
-    grader: graders.grade_hard
+    description: "Evaluate a behavioral interview answer on STAR structure, evidence, impact, and reflection."
+    max_steps: 4
+    success_threshold: 0.72
+    grader: "graders.grade_hard"
 
-models:
-  action: models.Action
-  observation: models.Observation
-  metadata: models.Metadata
-  reset_response: models.ResetResponse
-  step_response: models.StepResponse
-  state_response: models.StateResponse
+schemas:
+  action:
+    model: "models.ActionModel"
+    type: object
+    fields:
+      message:
+        type: string
+        required: true
+  observation:
+    model: "models.ObservationModel"
+    type: object
+    fields:
+      task_id: string
+      difficulty: string
+      turn: integer
+      max_turns: integer
+      prompt: string
+      done: boolean
+      last_answer: string
+      quality_label: string
+  state:
+    model: "models.StateModel"
+    type: object
+    fields:
+      task_id: string
+      difficulty: string
+      turn: integer
+      max_turns: integer
+      prompt: string
+      done: boolean
+      history: array
+      score: float
+      success: boolean
+      quality_label: string
+  metadata:
+    model: "models.MetadataModel"
+    type: object
 
-action_space:
-  type: object
-  model: models.Action
-  fields:
-    message:
-      type: string
-      description: "Candidate answer for the current interview prompt."
-
-observation_space:
-  type: object
-  model: models.Observation
-  fields:
-    task_id:
-      type: string
-    difficulty:
-      type: string
-    turn:
-      type: integer
-    max_turns:
-      type: integer
-    prompt:
-      type: string
-    history:
-      type: array
-    done:
-      type: boolean
+graders:
+  easy: "graders.grade_easy"
+  medium: "graders.grade_medium"
+  hard: "graders.grade_hard"
 
 reward:
   type: float
   range: [0.0, 1.0]
-  source: "grader score for latest action"
-  graders:
-    easy: graders.grade_easy
-    medium: graders.grade_medium
-    hard: graders.grade_hard
+  formula: "reward = grader_score"
+  partial_credit: true
+  termination: "Episode terminates on success or after max_steps."
 
 api:
   reset:
-    method: GET
-    path: /reset
-    query:
-      task_id: "easy | medium | hard"
-    response: '{"state": {...}, "info": {...}}'
+    method: "GET"
+    path: "/reset"
+    response_model: "models.StateModel"
   reset_post:
-    method: POST
-    path: /reset
-    body_model: models.ResetRequest
-    response: '{"state": {...}, "info": {...}}'
+    method: "POST"
+    path: "/reset"
+    request_model: "models.ResetRequest"
+    response_model: "models.StateModel"
   step:
-    method: POST
-    path: /step
-    body_model: models.Action
-    response: '{"state": {...}, "reward": 0.0, "done": false, "info": {...}}'
+    method: "POST"
+    path: "/step"
+    request_model: "models.ActionModel"
+    response_model: "models.StepResponseModel"
   state:
-    method: GET
-    path: /state
-    response: '{"state": {...}}'
+    method: "GET"
+    path: "/state"
+    response_model: "models.StateModel"
   metadata:
-    method: GET
-    path: /metadata
-    response_model: models.Metadata
+    method: "GET"
+    path: "/metadata"
+    response_model: "models.MetadataModel"
 
-baseline: inference.py
-launch: launch.sh
+inference: "inference.py"
+launch: "launch.sh"

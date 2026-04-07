@@ -15,4 +15,4 @@ ENV HF_TOKEN=""
 
 RUN chmod +x /app/launch.sh
 
-CMD ["/app/launch.sh"]
+ENTRYPOINT ["/app/launch.sh"]
