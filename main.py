@@ -20,6 +20,11 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 ENV = InterviewEnv()
 
 
+@app.get("/")
+def root():
+    return FileResponse(STATIC_DIR / "index.html")
+
+
 @app.get("/ui")
 def ui():
     return FileResponse(STATIC_DIR / "index.html")

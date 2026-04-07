@@ -31,7 +31,7 @@ InterviewEnv is an API-only OpenEnv Round 1 environment for deterministic interv
 {"state": {}}
 ```
 
-The validator endpoints are API-only and do not require a UI. A lightweight browser demo is available at `GET /ui` and does not change the `/reset`, `/step`, or `/state` response contracts.
+The validator endpoints are API-only and do not require a UI. A lightweight browser demo is available at `GET /` and `GET /ui`; it does not change the `/reset`, `/step`, or `/state` response contracts.
 
 ## Tasks
 
