@@ -4,9 +4,9 @@ from __future__ import annotations
 TASKS: dict[str, dict] = {
     "easy": {
         "id": "easy",
-        "name": "Basic HR interview",
+        "name": "Basic Interview Simulation",
         "difficulty": "easy",
-        "description": "Answer basic HR interview prompts with role interest, strengths, and concise evidence.",
+        "description": "Simulates a low-pressure interview where the agent answers fundamental questions and builds confidence through early-stage feedback.",
         "max_turns": 3,
         "pass_threshold": 0.78,
         "grader": "graders.grade_easy",
@@ -17,9 +17,9 @@ TASKS: dict[str, dict] = {
     },
     "medium": {
         "id": "medium",
-        "name": "Technical reasoning interview",
+        "name": "Technical Interview Simulation",
         "difficulty": "medium",
-        "description": "Explain technical decisions, tradeoffs, measurement, and improvement opportunities.",
+        "description": "Agent must provide structured, well-reasoned answers including tradeoffs, clarity, and technical depth across multiple turns.",
         "max_turns": 4,
         "pass_threshold": 0.80,
         "grader": "graders.grade_medium",
@@ -31,9 +31,9 @@ TASKS: dict[str, dict] = {
     },
     "hard": {
         "id": "hard",
-        "name": "Adaptive stress interview",
+        "name": "Adaptive Stress Interview",
         "difficulty": "hard",
-        "description": "Handle adaptive behavioral and stress prompts using STAR evidence, consistency, and recovery.",
+        "description": "Environment dynamically adapts difficulty based on agent performance, testing consistency, improvement, and ability to handle pressure.",
         "max_turns": 5,
         "pass_threshold": 0.82,
         "grader": "graders.grade_hard",

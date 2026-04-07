@@ -22,6 +22,24 @@ InterviewEnv is not only an LLM evaluator. It has a Markov-style transition loop
 - **Transition**: `step(action)` grades the answer, shapes reward from improvement and memory, updates cumulative score/performance history, adapts difficulty, updates stress/adaptivity factor, selects a new question, and terminates on sustained success or max turns.
 - **Reward**: deterministic shaped float in `[0.0, 1.0]` using current performance, strategy/confidence choices, consistency, improvement over previous steps, and repetition penalties.
 
+## 🧠 Reinforcement Learning Design
+
+This environment models a **sequential interview process** where agent performance evolves over time.
+
+- The agent receives **cumulative rewards** based on answer quality, improvement, and consistency.
+- Interview difficulty **adapts dynamically** based on the agent’s past performance.
+- The system tracks **learning progression**, not just single-step correctness.
+
+## 🎯 Agent Objective
+
+The agent’s goal is to **maximize cumulative interview performance** across multiple turns by:
+
+- Improving answer quality step-by-step
+- Maintaining consistency
+- Adapting to increasing difficulty
+
+This creates a true reinforcement learning loop where actions influence future states and rewards.
+
 ## Folder Structure
 
 ```text
@@ -79,7 +97,12 @@ InterviewEnv/
   "stress_level": 0.15,
   "adaptivity_factor": 0.0,
   "reward_breakdown": {},
-  "learning_metrics": {},
+  "learning_metrics": {
+    "average_score": 0.0,
+    "total_score": 0.0,
+    "turns_taken": 0,
+    "score_history": []
+  },
   "last_action": {},
   "score": 0.0,
   "success": false,
@@ -115,9 +138,9 @@ These fields affect reward, stress, difficulty adaptation, and next-question sel
 
 | Task | Name | Max Steps | Success | Environment Behavior |
 |---|---|---:|---:|---|
-| `easy` | Basic HR interview | 3 | 0.78 | Starts at difficulty 1 and rewards role-fit keywords, concise evidence, and confidence. |
-| `medium` | Technical reasoning interview | 4 | 0.80 | Starts at difficulty 2 and rewards tradeoffs, measurement, specificity, and improvement. |
-| `hard` | Adaptive stress interview | 5 | 0.82 | Starts at difficulty 3 and rewards STAR structure, impact, recovery, consistency, and stress handling. |
+| `easy` | Basic Interview Simulation | 3 | 0.78 | Starts at difficulty 1 and rewards role-fit keywords, concise evidence, and confidence. |
+| `medium` | Technical Interview Simulation | 4 | 0.80 | Starts at difficulty 2 and rewards tradeoffs, measurement, specificity, and improvement. |
+| `hard` | Adaptive Stress Interview | 5 | 0.82 | Starts at difficulty 3 and rewards STAR structure, impact, recovery, consistency, and stress handling. |
 
 ## Reward Logic
 
@@ -147,7 +170,7 @@ Components:
 - `confidence_alignment`: compares claimed `confidence_level` against observed confidence.
 - `action_strategy`: rewards suitable strategy choices and penalizes `skip`.
 - `repetition_penalty`: discourages repeating recent answers.
-- `learning_metrics`: exposes `average_score`, `improvement_trend`, `previous_reward`, `current_reward`, and `cumulative_score`.
+- `learning_metrics`: exposes `average_score`, `total_score`, `turns_taken`, `score_history`, `improvement_trend`, `previous_reward`, `current_reward`, and `cumulative_score`.
 
 Success requires sustained learning:
 

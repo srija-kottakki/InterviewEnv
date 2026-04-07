@@ -67,7 +67,7 @@ class ObservationModel(BaseModel):
     reward_breakdown: dict[str, float] = Field(default_factory=dict)
     performance_history: list[dict[str, object]] = Field(default_factory=list)
     last_action: dict[str, object] = Field(default_factory=dict)
-    learning_metrics: dict[str, float] = Field(default_factory=dict)
+    learning_metrics: dict[str, object] = Field(default_factory=dict)
 
 
 class StateModel(BaseModel):
@@ -83,7 +83,7 @@ class StateModel(BaseModel):
     question: str
     done: bool
     history: list[dict[str, str]]
-    qa_history: list[dict[str, str]]
+    qa_history: list[dict[str, object]]
     question_history: list[str]
     resume_text: str = ""
     parsed_resume_data: dict[str, object] = Field(default_factory=dict)
@@ -95,7 +95,7 @@ class StateModel(BaseModel):
     adaptivity_factor: float = 0.0
     reward_breakdown: dict[str, float] = Field(default_factory=dict)
     last_action: dict[str, object] = Field(default_factory=dict)
-    learning_metrics: dict[str, float] = Field(default_factory=dict)
+    learning_metrics: dict[str, object] = Field(default_factory=dict)
     score: float = 0.0
     success: bool = False
     quality_label: Optional[Literal["poor", "avg", "good"]] = None

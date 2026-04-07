@@ -43,7 +43,7 @@ class InterviewEnv:
         self._current_difficulty = 1
         self._current_question = QUESTION_BUCKETS[1][0]
         self._history: list[dict[str, str]] = []
-        self._qa_history: list[dict[str, str]] = []
+        self._qa_history: list[dict[str, object]] = []
         self._question_history: list[str] = []
         self._behavioral_feedback = self._empty_feedback()
         self._adaptive_reason = "Initial question selected."
@@ -61,7 +61,7 @@ class InterviewEnv:
         self._last_action: dict[str, object] = {}
         self._prev_reward = 0.0
         self._raw_reward_history: list[float] = []
-        self._learning_metrics: dict[str, float] = {}
+        self._learning_metrics: dict[str, object] = {}
 
     def update_resume(self, resume_text: str, parsed_resume_data: dict[str, object]) -> StateModel:
         self._resume_text = resume_text
@@ -125,11 +125,13 @@ class InterviewEnv:
         self._raw_reward_history.append(raw_reward)
         self._score = round(self._score + reward, 4)
         self._score_history.append(reward)
+        self._qa_history[-1]["reward"] = reward
+        self._qa_history[-1]["raw_reward"] = raw_reward
         self._success = self._is_success()
         self._quality_label = classify_quality(answer) if self._task_id == "medium" else None
         self._score_trend = self._compute_score_trend()
         self._learning_metrics = self._compute_learning_metrics(current_reward=reward, raw_reward=raw_reward)
-        self._prev_reward = reward
+        self._prev_reward = raw_reward
 
         old_difficulty = self._current_difficulty
         self._current_difficulty = self._adapt_difficulty(relevance)
@@ -226,8 +228,8 @@ class InterviewEnv:
         improvement = raw_reward - self._prev_reward
         progress_bonus = max(improvement, 0.0)
         consistency_bonus = 0.10 if raw_reward > 0.60 else 0.0
-        strategy_bonus = {"structured": 0.05, "detailed": 0.03, "concise": 0.02, "direct": 0.02}.get(action.normalized_strategy(), 0.0)
-        confidence_bonus = 0.10 * action.normalized_confidence()
+        strategy_bonus = {"structured": 0.10, "detailed": 0.05, "concise": 0.02, "direct": 0.02}.get(action.normalized_strategy(), 0.0)
+        confidence_bonus = 0.15 * action.normalized_confidence()
         repetition_penalty = 0.20 if answer and answer in [qa["answer"] for qa in self._qa_history[:-1][-2:]] else 0.0
         difficulty_weight = {"easy": 0.8, "medium": 1.0, "hard": 1.2}[self._task_id]
         shaped = (raw_reward + 0.20 * progress_bonus + consistency_bonus + strategy_bonus + confidence_bonus - repetition_penalty)
@@ -249,9 +251,10 @@ class InterviewEnv:
         return round(self._score / max(len(self._score_history), 1), 4)
 
     def _is_success(self) -> bool:
-        return self._average_score() >= self._task["pass_threshold"] and len(self._score_history) >= 2
+        avg_score = self._score / max(self._turn + 1, 1)
+        return avg_score >= self._task["pass_threshold"] and len(self._score_history) >= 2
 
-    def _compute_learning_metrics(self, current_reward: float = 0.0, raw_reward: float = 0.0) -> dict[str, float]:
+    def _compute_learning_metrics(self, current_reward: float = 0.0, raw_reward: float = 0.0) -> dict[str, object]:
         average_score = self._average_score()
         previous_average = (
             round(sum(self._score_history[:-1]) / len(self._score_history[:-1]), 4)
@@ -262,6 +265,9 @@ class InterviewEnv:
         cumulative_score = round(self._score, 4)
         return {
             "average_score": average_score,
+            "total_score": cumulative_score,
+            "turns_taken": len(self._score_history),
+            "score_history": [qa.get("reward", 0.0) for qa in self._qa_history],
             "previous_average_score": previous_average,
             "improvement_trend": improvement_trend,
             "cumulative_score": cumulative_score,
@@ -419,6 +425,7 @@ class InterviewEnv:
             "stress_level": self._stress_level,
             "adaptivity_factor": self._adaptivity_factor,
             "reward_breakdown": dict(self._reward_breakdown),
+            "learning_metrics": dict(self._learning_metrics),
             "success": self._success,
             "behavioral_feedback": dict(self._behavioral_feedback),
             "adaptive_reason": self._adaptive_reason,
