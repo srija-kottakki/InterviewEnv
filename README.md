@@ -47,7 +47,7 @@ InterviewEnv/
 
 ## Adaptive Interviewer
 
-The environment maintains `current_difficulty` from 1 to 3 and chooses the next question from difficulty buckets based on the previous answer and uploaded resume context. It tracks `resume_text`, `parsed_resume_data`, `question_history`, `qa_history`, `behavioral_feedback`, `last_feedback`, and `adaptive_reason` in state payloads.
+The environment maintains `current_difficulty` from 1 to 3 and chooses the next question from difficulty buckets based on the previous answer. Resume upload is optional: without a resume, InterviewEnv uses a general interview question bank; after a resume is uploaded, it personalizes project, skill, and experience questions from parsed resume context. It tracks `resume_text`, `parsed_resume_data`, `question_history`, `qa_history`, `behavioral_feedback`, `last_feedback`, and `adaptive_reason` in state payloads.
 
 ## API
 
@@ -79,7 +79,7 @@ Returns `MetadataModel` with `env_id`, `version`, `authors`, schemas, and task l
 
 `POST /upload_resume`
 
-Uploads a PDF or text resume as `multipart/form-data` field `file`, parses skills, projects, experience, education, and tools, and stores the parsed result in state.
+Optional. Uploads a PDF or text resume as `multipart/form-data` field `file`, parses skills, projects, experience, education, and tools, and stores the parsed result in state. The environment still works without calling this endpoint.
 
 ## Models
 

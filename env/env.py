@@ -185,7 +185,18 @@ class InterviewEnv:
                 return question
         return bucket[self._turn % len(bucket)]
 
+    def _has_resume_context(self) -> bool:
+        if self._resume_text.strip():
+            return True
+        return any(
+            self._parsed_resume_data.get(key)
+            for key in ("skills", "projects", "experience", "education", "tools_technologies")
+        )
+
     def _resume_question_bucket(self, level: int) -> list[str]:
+        if not self._has_resume_context():
+            return []
+
         data = self._parsed_resume_data
         skills = [str(skill) for skill in data.get("skills", [])]
         projects = [str(project) for project in data.get("projects", [])]
@@ -218,7 +229,7 @@ class InterviewEnv:
 
         behavioral = [
             "Tell me about a difficult problem from your resume experience.",
-            "Tell me about a failure and what you learned.",
+            "Tell me about a failure connected to your resume and what you learned.",
             "Give a teamwork example connected to your resume.",
         ]
         questions.extend(behavioral)
@@ -242,7 +253,9 @@ class InterviewEnv:
         if "team" in lowered or "collaborat" in lowered:
             return "What was your specific contribution to the team outcome?"
         if relevance < 0.45:
-            return "Can you connect your answer more directly to the question and your resume?"
+            if self._has_resume_context():
+                return "Can you connect your answer more directly to the question and your resume?"
+            return "Can you connect your answer more directly to the question?"
         return None
 
     def _info(self, extra: dict | None = None) -> dict:

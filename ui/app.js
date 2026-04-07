@@ -83,7 +83,11 @@ function renderState(state) {
     follow_up_question: state.current_question,
     current_question: state.current_question,
   });
-  renderJson(resumeViewer, state.parsed_resume_data || {});
+  const resumeContext =
+    state.parsed_resume_data && Object.keys(state.parsed_resume_data).length > 0
+      ? state.parsed_resume_data
+      : { status: "No resume uploaded. Using general interview questions." };
+  renderJson(resumeViewer, resumeContext);
   answerInput.disabled = state.done;
   submitButton.disabled = state.done;
 }
@@ -140,7 +144,6 @@ resumeForm.addEventListener("submit", async (event) => {
       throw new Error(data?.detail || response.statusText || "Resume upload failed");
     }
     renderState(data);
-    renderJson(resumeViewer, data.parsed_resume_data || {});
   } catch (error) {
     setError(error.message);
   } finally {
