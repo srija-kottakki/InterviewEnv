@@ -115,6 +115,14 @@ button:disabled {
   grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
+.upload-form {
+  align-items: center;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  margin-bottom: 1rem;
+}
+
 .toolbar label,
 .answer-form label {
   font-weight: 900;
@@ -242,6 +250,10 @@ pre {
   min-height: 170px;
 }
 
+#resumeViewer {
+  min-height: 180px;
+}
+
 .error {
   color: var(--danger);
   font-weight: 800;
@@ -250,7 +262,8 @@ pre {
 
 @media (max-width: 850px) {
   .layout,
-  .toolbar {
+  .toolbar,
+  .upload-form {
     grid-template-columns: 1fr;
   }
 }

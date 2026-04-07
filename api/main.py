@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from env.env import InterviewEnv
 from env.tasks import TASKS
 from models import ActionModel, MetadataModel, ResetRequest, StateModel, StepResponseModel
+from utils.resume_parser import extract_resume_text, parse_resume_text
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -51,8 +52,21 @@ def metadata() -> MetadataModel:
             "step": "POST /step",
             "state": "GET /state",
             "metadata": "GET /metadata",
+            "upload_resume": "POST /upload_resume",
         },
     )
+
+
+@app.post("/upload_resume", response_model=StateModel)
+async def upload_resume(request: Request) -> StateModel:
+    form = await request.form()
+    file = form.get("file")
+    if file is None:
+        raise HTTPException(status_code=400, detail="Upload a resume file using multipart field 'file'.")
+    content = await file.read()
+    resume_text = extract_resume_text(file.filename or "resume.txt", content)
+    parsed_resume_data = parse_resume_text(resume_text)
+    return ENV.update_resume(resume_text=resume_text, parsed_resume_data=parsed_resume_data)
 
 
 @app.get("/reset", response_model=StateModel)

@@ -24,6 +24,15 @@
       </nav>
 
       <section id="play" class="tab-panel active">
+        <form id="resumeForm" class="card upload-form">
+          <div>
+            <p class="eyebrow">Resume Context</p>
+            <label for="resumeInput">Upload PDF or text resume</label>
+          </div>
+          <input id="resumeInput" type="file" accept=".pdf,.txt,.md,text/plain,application/pdf" />
+          <button id="uploadButton" type="submit">Upload Resume</button>
+        </form>
+
         <div class="card toolbar">
           <label for="taskSelect">Task</label>
           <select id="taskSelect">
@@ -60,6 +69,8 @@
             </dl>
             <p class="eyebrow">Behavioral Feedback</p>
             <pre id="feedbackViewer">{}</pre>
+            <p class="eyebrow">Resume-Based Context</p>
+            <pre id="resumeViewer">{}</pre>
             <div id="error" class="error" role="alert"></div>
           </aside>
         </section>

@@ -47,7 +47,7 @@ InterviewEnv/
 
 ## Adaptive Interviewer
 
-The environment maintains `current_difficulty` from 1 to 3 and chooses the next question from difficulty buckets based on the previous answer. It tracks `question_history`, `qa_history`, `behavioral_feedback`, and `adaptive_reason` in state and observation payloads.
+The environment maintains `current_difficulty` from 1 to 3 and chooses the next question from difficulty buckets based on the previous answer and uploaded resume context. It tracks `resume_text`, `parsed_resume_data`, `question_history`, `qa_history`, `behavioral_feedback`, `last_feedback`, and `adaptive_reason` in state payloads.
 
 ## API
 
@@ -60,7 +60,7 @@ Returns `StateModel`.
 Request:
 
 ```json
-{"message": "candidate answer"}
+{"answer": "candidate answer"}
 ```
 
 Returns:
@@ -76,6 +76,10 @@ Returns `StateModel`.
 `GET /metadata`
 
 Returns `MetadataModel` with `env_id`, `version`, `authors`, schemas, and task list.
+
+`POST /upload_resume`
+
+Uploads a PDF or text resume as `multipart/form-data` field `file`, parses skills, projects, experience, education, and tools, and stores the parsed result in state.
 
 ## Models
 
@@ -123,7 +127,7 @@ The script uses the OpenAI client and emits:
 
 ```text
 [START]
-[STEP] {"task_id":"easy","step":1,"action":{"message":"..."},"observation":{},"reward":0.5,"done":false,"info":{}}
+[STEP] {"task_id":"easy","step":1,"action":{"answer":"..."},"observation":{},"reward":0.5,"done":false,"info":{}}
 [END] {"task_id":"easy","score":0.5,"steps":2,"done":true}
 ```
 

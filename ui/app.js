@@ -1,4 +1,7 @@
 const taskSelect = document.querySelector("#taskSelect");
+const resumeForm = document.querySelector("#resumeForm");
+const resumeInput = document.querySelector("#resumeInput");
+const uploadButton = document.querySelector("#uploadButton");
 const resetButton = document.querySelector("#resetButton");
 const answerForm = document.querySelector("#answerForm");
 const answerInput = document.querySelector("#answerInput");
@@ -10,6 +13,7 @@ const done = document.querySelector("#done");
 const difficulty = document.querySelector("#difficulty");
 const adaptiveLevel = document.querySelector("#adaptiveLevel");
 const feedbackViewer = document.querySelector("#feedbackViewer");
+const resumeViewer = document.querySelector("#resumeViewer");
 const errorBox = document.querySelector("#error");
 const stateViewer = document.querySelector("#stateViewer");
 const metadataViewer = document.querySelector("#metadataViewer");
@@ -76,8 +80,10 @@ function renderState(state) {
   renderJson(feedbackViewer, {
     behavioral_feedback: state.behavioral_feedback,
     adaptive_reason: state.adaptive_reason,
+    follow_up_question: state.current_question,
     current_question: state.current_question,
   });
+  renderJson(resumeViewer, state.parsed_resume_data || {});
   answerInput.disabled = state.done;
   submitButton.disabled = state.done;
 }
@@ -116,6 +122,32 @@ resetButton.addEventListener("click", async () => {
   }
 });
 
+resumeForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const file = resumeInput.files[0];
+  if (!file) {
+    setError("Choose a PDF or text resume first.");
+    return;
+  }
+  uploadButton.disabled = true;
+  setError();
+  try {
+    const body = new FormData();
+    body.append("file", file);
+    const response = await fetch("/upload_resume", { method: "POST", body });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.detail || response.statusText || "Resume upload failed");
+    }
+    renderState(data);
+    renderJson(resumeViewer, data.parsed_resume_data || {});
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    uploadButton.disabled = false;
+  }
+});
+
 answerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const message = answerInput.value.trim();
@@ -129,7 +161,7 @@ answerForm.addEventListener("submit", async (event) => {
   try {
     const data = await request("/step", {
       method: "POST",
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ answer: message }),
     });
     const state = await request("/state");
     renderState(state);

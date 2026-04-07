@@ -35,9 +35,12 @@ schemas:
     model: "models.ActionModel"
     type: object
     fields:
-      message:
+      answer:
         type: string
         required: true
+      message:
+        type: string
+        required: false
   observation:
     model: "models.ObservationModel"
     type: object
@@ -54,6 +57,7 @@ schemas:
       quality_label: string
       behavioral_feedback: object
       adaptive_reason: string
+      follow_up_question: string
   state:
     model: "models.StateModel"
     type: object
@@ -74,6 +78,9 @@ schemas:
       quality_label: string
       behavioral_feedback: object
       adaptive_reason: string
+      resume_text: string
+      parsed_resume_data: object
+      last_feedback: object
   metadata:
     model: "models.MetadataModel"
     type: object
@@ -113,6 +120,11 @@ api:
     method: "GET"
     path: "/metadata"
     response_model: "models.MetadataModel"
+  upload_resume:
+    method: "POST"
+    path: "/upload_resume"
+    request: "multipart/form-data file"
+    response_model: "models.StateModel"
 
 inference: "inference.py"
 launch: "launch.sh"

@@ -49,6 +49,19 @@ class InterviewEnv:
         self._adaptive_reason = "Initial question selected."
         self._quality_label: str | None = None
         self._last_answer: str | None = None
+        self._resume_text = ""
+        self._parsed_resume_data: dict[str, object] = {}
+        self._last_follow_up_question: str | None = None
+
+    def update_resume(self, resume_text: str, parsed_resume_data: dict[str, object]) -> StateModel:
+        self._resume_text = resume_text
+        self._parsed_resume_data = parsed_resume_data
+        if self._turn == 0 and not self._done:
+            self._current_question = self._select_question()
+            self._history = [{"role": "interviewer", "content": self._current_question}]
+            self._question_history = [self._current_question]
+            self._adaptive_reason = "Resume uploaded; next question personalized to resume context."
+        return self.state()
 
     def reset(self, task_id: str = "easy") -> StateModel:
         self._task_id = task_id
@@ -66,6 +79,7 @@ class InterviewEnv:
         self._adaptive_reason = f"Started at difficulty level {self._current_difficulty} for task '{task_id}'."
         self._quality_label = None
         self._last_answer = None
+        self._last_follow_up_question = None
         return self.state()
 
     def step(self, action: ActionModel) -> tuple[ObservationModel, float, bool, dict]:
@@ -73,7 +87,7 @@ class InterviewEnv:
             return self.observation(), 0.0, True, self._info(extra={"error": "episode_done"})
 
         previous_question = self._current_question
-        answer = action.message.strip()
+        answer = action.text()
         self._last_answer = answer
         self._history.append({"role": "agent", "content": answer})
         self._qa_history.append({"question": previous_question, "answer": answer})
@@ -89,10 +103,11 @@ class InterviewEnv:
         old_difficulty = self._current_difficulty
         self._current_difficulty = self._adapt_difficulty(relevance)
         self._adaptive_reason = self._explain_adaptation(old_difficulty, self._current_difficulty, relevance)
+        self._last_follow_up_question = self._generate_follow_up(answer, relevance)
 
         self._turn += 1
         self._done = self._success or self._turn >= self._task["max_turns"]
-        self._current_question = "Interview complete." if self._done else self._select_question()
+        self._current_question = "Interview complete." if self._done else self._last_follow_up_question or self._select_question()
         self._history.append({"role": "interviewer", "content": self._current_question})
         self._question_history.append(self._current_question)
 
@@ -107,10 +122,14 @@ class InterviewEnv:
             max_turns=self._task["max_turns"],
             prompt=self._current_question,
             current_question=self._current_question,
+            question=self._current_question,
             done=self._done,
             history=list(self._history),
             qa_history=list(self._qa_history),
             question_history=list(self._question_history),
+            resume_text=self._resume_text,
+            parsed_resume_data=dict(self._parsed_resume_data),
+            last_feedback=dict(self._behavioral_feedback),
             score=self._score,
             success=self._success,
             quality_label=self._quality_label,
@@ -127,10 +146,12 @@ class InterviewEnv:
             max_turns=self._task["max_turns"],
             prompt=self._current_question,
             current_question=self._current_question,
+            question=self._current_question,
             done=self._done,
             last_answer=self._last_answer,
             quality_label=self._quality_label,
             behavioral_feedback=dict(self._behavioral_feedback),
+            follow_up_question=self._last_follow_up_question,
             adaptive_reason=self._adaptive_reason,
         )
 
@@ -157,12 +178,72 @@ class InterviewEnv:
         return f"Kept difficulty at {new_level} based on balanced performance ({summary})."
 
     def _select_question(self) -> str:
-        bucket = QUESTION_BUCKETS[self._current_difficulty]
+        bucket = self._resume_question_bucket(self._current_difficulty) + QUESTION_BUCKETS[self._current_difficulty]
         asked = set(self._question_history)
         for question in bucket:
             if question not in asked:
                 return question
         return bucket[self._turn % len(bucket)]
+
+    def _resume_question_bucket(self, level: int) -> list[str]:
+        data = self._parsed_resume_data
+        skills = [str(skill) for skill in data.get("skills", [])]
+        projects = [str(project) for project in data.get("projects", [])]
+        experience = [str(item) for item in data.get("experience", [])]
+        questions = []
+
+        for project in projects[:3]:
+            name = project.split(".")[0][:80]
+            questions.extend([
+                f"Explain the goal of this resume project: {name}.",
+                f"What challenge did you face in this project: {name}?",
+                f"How would you improve this project now: {name}?",
+            ])
+        for skill in skills[:5]:
+            if skill.lower() == "python":
+                questions.extend(["In Python, when would you use a list instead of a tuple?", "Explain decorators in Python with a resume-based example."])
+            elif skill.lower() == "sql":
+                questions.extend(["Explain SQL JOINs using one of your projects.", "How would you find duplicates in SQL?"])
+            elif skill.lower() in {"ml", "machine learning", "tensorflow", "pytorch", "scikit-learn"}:
+                questions.extend(["Explain overfitting and how you would detect it.", "Which evaluation metrics would fit your ML project?"])
+            elif skill:
+                questions.append(f"How did you use {skill} in your resume projects?")
+        for item in experience[:3]:
+            snippet = item[:90]
+            questions.extend([
+                f"What were your responsibilities in this experience: {snippet}?",
+                f"Describe a challenge you solved during this experience: {snippet}.",
+                "How did you collaborate with your team in that role?",
+            ])
+
+        behavioral = [
+            "Tell me about a difficult problem from your resume experience.",
+            "Tell me about a failure and what you learned.",
+            "Give a teamwork example connected to your resume.",
+        ]
+        questions.extend(behavioral)
+
+        if level == 1:
+            return questions[::3] or []
+        if level == 2:
+            return questions[1::2] or questions
+        return questions or []
+
+    def _generate_follow_up(self, answer: str, relevance: float) -> str | None:
+        lowered = answer.lower()
+        if "react" in lowered:
+            return "Why React instead of Angular, and how did you optimize performance?"
+        if "python" in lowered:
+            return "What Python design choice mattered most in that work, and why?"
+        if "sql" in lowered:
+            return "How did you design the SQL queries or joins for correctness and performance?"
+        if "machine learning" in lowered or "model" in lowered or "ml" in lowered:
+            return "How did you evaluate the model and handle overfitting or bias?"
+        if "team" in lowered or "collaborat" in lowered:
+            return "What was your specific contribution to the team outcome?"
+        if relevance < 0.45:
+            return "Can you connect your answer more directly to the question and your resume?"
+        return None
 
     def _info(self, extra: dict | None = None) -> dict:
         info = {
@@ -176,6 +257,7 @@ class InterviewEnv:
             "success": self._success,
             "behavioral_feedback": dict(self._behavioral_feedback),
             "adaptive_reason": self._adaptive_reason,
+            "follow_up_question": self._last_follow_up_question,
         }
         if self._quality_label is not None:
             info["quality_label"] = self._quality_label

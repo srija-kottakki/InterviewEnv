@@ -60,7 +60,7 @@ def run_task(client: OpenAI, task_id: str) -> float:
 
     while not done:
         answer = model_answer(client, task_id, state.prompt, state.history)
-        observation, reward, done, info = env.step(ActionModel(message=answer))
+        observation, reward, done, info = env.step(ActionModel(answer=answer))
         state = env.state()
         steps += 1
         total_reward += reward
@@ -69,7 +69,7 @@ def run_task(client: OpenAI, task_id: str) -> float:
             {
                 "task_id": task_id,
                 "step": steps,
-                "action": {"message": answer},
+                "action": {"answer": answer},
                 "observation": observation.model_dump(),
                 "reward": reward,
                 "done": done,

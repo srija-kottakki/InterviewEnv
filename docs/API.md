@@ -19,7 +19,7 @@ Submits one action.
 Request:
 
 ```json
-{"message": "candidate answer"}
+{"answer": "candidate answer"}
 ```
 
 Response:
@@ -39,3 +39,9 @@ Response: `StateModel`
 ## GET /metadata
 
 Returns task, model, endpoint, and reward metadata.
+
+## POST /upload_resume
+
+Uploads a PDF or text resume using `multipart/form-data` with field name `file`.
+
+Response: `StateModel` with `resume_text` and `parsed_resume_data`.

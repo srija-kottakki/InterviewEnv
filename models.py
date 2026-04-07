@@ -11,7 +11,11 @@ TaskId = Literal["easy", "medium", "hard"]
 class ActionModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    message: str = Field(..., description="Candidate answer submitted by the agent.")
+    answer: str = Field(default="", description="Candidate answer submitted by the agent.")
+    message: str = Field(default="", description="Backward-compatible alias for answer.")
+
+    def text(self) -> str:
+        return (self.answer or self.message).strip()
 
 
 class ObservationModel(BaseModel):
@@ -24,10 +28,12 @@ class ObservationModel(BaseModel):
     max_turns: int
     prompt: str
     current_question: str
+    question: str
     done: bool
     last_answer: Optional[str] = None
     quality_label: Optional[Literal["poor", "avg", "good"]] = None
     behavioral_feedback: dict[str, object] = Field(default_factory=dict)
+    follow_up_question: Optional[str] = None
     adaptive_reason: str = ""
 
 
@@ -41,10 +47,14 @@ class StateModel(BaseModel):
     max_turns: int
     prompt: str
     current_question: str
+    question: str
     done: bool
     history: list[dict[str, str]]
     qa_history: list[dict[str, str]]
     question_history: list[str]
+    resume_text: str = ""
+    parsed_resume_data: dict[str, object] = Field(default_factory=dict)
+    last_feedback: dict[str, object] = Field(default_factory=dict)
     score: float = 0.0
     success: bool = False
     quality_label: Optional[Literal["poor", "avg", "good"]] = None

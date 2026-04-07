@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from utils.feedback_analyzer import analyze_behavior
+
 
 def _clamp(value: float) -> float:
     return round(min(max(value, 0.0), 1.0), 4)
@@ -22,6 +24,11 @@ def _length_credit(text: str, target_words: int) -> float:
 
 def relevance_score(answer: str, state: dict) -> float:
     task_id = state.get("task_id", "easy")
+    parsed_resume = state.get("parsed_resume_data", {}) or {}
+    resume_terms = []
+    for key in ("skills", "programming_languages", "libraries_frameworks", "tools", "tools_technologies"):
+        resume_terms.extend(parsed_resume.get(key, []) or [])
+    resume_bonus = 0.15 if _contains_any(answer, [str(term) for term in resume_terms]) else 0.0
     groups_by_task = {
         "easy": [
             ["interview", "role", "company", "position", "team"],
@@ -42,40 +49,7 @@ def relevance_score(answer: str, state: dict) -> float:
             ["learned", "reflection", "feedback", "metric", "measured"],
         ],
     }
-    return _clamp(0.75 * _keyword_fraction(answer, groups_by_task[task_id]) + 0.25 * _length_credit(answer, 55))
-
-
-def analyze_behavior(answer: str, state: dict) -> dict[str, object]:
-    words = [word.strip(".,!?;:").lower() for word in answer.split()]
-    filler_words = {"um", "uh", "like", "basically"}
-    filler_count = sum(1 for word in words if word in filler_words)
-    lowered = answer.lower()
-    if "you know" in lowered:
-        filler_count += lowered.count("you know")
-
-    filler_score = _clamp(1.0 - min(filler_count / 4.0, 1.0))
-    confident_markers = ["i led", "i decided", "i built", "i measured", "i improved", "i learned", "i recommend"]
-    uncertain_markers = ["maybe", "sort of", "kind of", "i guess", "probably", "not sure"]
-    confidence_score = _clamp(
-        0.45
-        + 0.12 * sum(1 for marker in confident_markers if marker in lowered)
-        - 0.12 * sum(1 for marker in uncertain_markers if marker in lowered)
-        + 0.20 * _length_credit(answer, 45)
-    )
-    structure_markers = ["first", "then", "because", "for example", "result", "learned", "situation", "task", "action"]
-    clarity_score = _clamp(0.35 * _length_credit(answer, 55) + 0.65 * min(sum(1 for marker in structure_markers if marker in lowered) / 3.0, 1.0))
-
-    comments = []
-    comments.append("Low filler usage." if filler_score >= 0.8 else "Reduce filler words such as um, uh, like, basically, or you know.")
-    comments.append("Confident delivery." if confidence_score >= 0.7 else "Use more decisive phrasing and own your actions.")
-    comments.append("Clear structure." if clarity_score >= 0.7 else "Add structure, examples, and a measurable result.")
-
-    return {
-        "filler_score": filler_score,
-        "confidence_score": confidence_score,
-        "clarity_score": clarity_score,
-        "comments": " ".join(comments),
-    }
+    return _clamp(0.65 * _keyword_fraction(answer, groups_by_task[task_id]) + 0.20 * _length_credit(answer, 55) + resume_bonus)
 
 
 def classify_quality(answer: str) -> str:
