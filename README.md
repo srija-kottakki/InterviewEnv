@@ -31,7 +31,7 @@ InterviewEnv is an API-only OpenEnv Round 1 environment for deterministic interv
 {"state": {}}
 ```
 
-No UI or Gradio app is launched.
+The validator endpoints are API-only and do not require a UI. A lightweight browser demo is available at `GET /ui` and does not change the `/reset`, `/step`, or `/state` response contracts.
 
 ## Tasks
 

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>InterviewEnv UI</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <p class="eyebrow">OpenEnv API Demo</p>
+        <h1>InterviewEnv</h1>
+        <p>
+          Practice three interview tasks while keeping the validator API endpoints
+          unchanged: <code>/reset</code>, <code>/step</code>, and <code>/state</code>.
+        </p>
+      </section>
+
+      <section class="card">
+        <div class="toolbar">
+          <label for="taskSelect">Task</label>
+          <select id="taskSelect">
+            <option value="easy">Easy - Basic interview question answering</option>
+            <option value="medium">Medium - Multi-turn follow-up reasoning</option>
+            <option value="hard">Hard - Behavioral STAR-format interview simulation</option>
+          </select>
+          <button id="resetButton" type="button">Start / Reset</button>
+        </div>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <p class="eyebrow">Conversation</p>
+            <span id="turnBadge">Not started</span>
+          </div>
+          <div id="chat" class="chat">
+            <p class="empty">Choose a task and start the interview.</p>
+          </div>
+          <form id="answerForm" class="answer-form">
+            <label for="answerInput">Your answer</label>
+            <textarea id="answerInput" rows="6" disabled placeholder="Type a specific interview answer..."></textarea>
+            <button id="submitButton" type="submit" disabled>Submit answer</button>
+          </form>
+        </article>
+
+        <aside class="card">
+          <p class="eyebrow">Score</p>
+          <dl class="metrics">
+            <div><dt>Reward</dt><dd id="reward">--</dd></div>
+            <div><dt>Done</dt><dd id="done">--</dd></div>
+            <div><dt>Difficulty</dt><dd id="difficulty">--</dd></div>
+          </dl>
+          <pre id="info">API response info appears here.</pre>
+        </aside>
+      </section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
