@@ -125,13 +125,14 @@ async function resetInterview() {
       method: "POST",
       body: JSON.stringify({ task_id: state.selectedTask }),
     });
-    state.history = [{ role: "interviewer", content: observation.interviewer_message }];
+    const resetState = observation.state;
+    state.history = [{ role: "interviewer", content: resetState.interviewer_message }];
     rewardMetric.textContent = "--";
     rubricMetric.textContent = "--";
     specificityMetric.textContent = "--";
     feedbackBox.textContent = "Interview started. Submit your first candidate response.";
     answerInput.value = "";
-    updateProgress(observation);
+    updateProgress(resetState);
     setInputEnabled(true);
     renderChat();
   } catch (error) {
@@ -160,12 +161,12 @@ async function submitAnswer(event) {
       method: "POST",
       body: JSON.stringify({ message }),
     });
-    state.history.push({ role: "interviewer", content: result.observation.interviewer_message });
-    rewardMetric.textContent = formatScore(result.reward.reward);
-    rubricMetric.textContent = formatScore(result.reward.rubric_score);
-    specificityMetric.textContent = formatScore(result.reward.specificity_score);
-    feedbackBox.textContent = result.observation.feedback || JSON.stringify(result.reward.info, null, 2);
-    updateProgress(result.observation);
+    state.history.push({ role: "interviewer", content: result.state.interviewer_message });
+    rewardMetric.textContent = formatScore(result.reward);
+    rubricMetric.textContent = formatScore(result.info.rubric_score);
+    specificityMetric.textContent = formatScore(result.info.specificity_score);
+    feedbackBox.textContent = result.state.feedback || JSON.stringify(result.info, null, 2);
+    updateProgress(result.state);
     setInputEnabled(!result.done);
     renderChat();
   } catch (error) {

@@ -111,3 +111,15 @@ api:
   step: "POST /step"
   state: "GET /state"
   tasks: "GET /tasks"
+  ui: "GET /ui"
+
+response_schema:
+  reset:
+    state: InterviewObservation
+    info: dict
+  step:
+    state: InterviewObservation
+    reward: float
+    done: boolean
+    info: dict
+  state: InterviewState

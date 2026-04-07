@@ -49,12 +49,23 @@ Very short or generic answers are penalized.
 
 ## API
 
-- `GET /` opens the browser UI
+- `GET /` returns API metadata
+- `GET /ui` opens the browser UI
 - `GET /api` returns the API metadata previously shown at `/`
 - `POST /reset` starts an episode for a task
+- `GET /reset?task_id=easy` starts an episode for a task
 - `POST /step` submits the candidate response
 - `GET /state` returns current environment state
 - `GET /tasks` lists available tasks
+
+Strict OpenEnv response shapes:
+
+```json
+{
+  "reset": {"state": {}, "info": {}},
+  "step": {"state": {}, "reward": 0.0, "done": false, "info": {}}
+}
+```
 
 ## UI
 

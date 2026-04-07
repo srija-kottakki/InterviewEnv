@@ -26,6 +26,22 @@ class ResetRequest(BaseModel):
 
 @app.get("/")
 def root():
+    return {
+        "name": "InterviewEnv",
+        "version": "1.0.0",
+        "endpoints": {
+            "reset": "GET /reset?task_id=easy or POST /reset",
+            "step": "POST /step",
+            "state": "GET /state",
+            "tasks": "GET /tasks",
+            "ui": "GET /ui",
+        },
+        "tasks": list(TASKS),
+    }
+
+
+@app.get("/ui")
+def ui():
     return FileResponse(STATIC_DIR / "index.html")
 
 
@@ -55,7 +71,18 @@ def reset_task(task_id: str):
     if task_id not in TASKS:
         raise HTTPException(status_code=400, detail=f"task_id must be one of {list(TASKS)}")
     _env = InterviewEnv(task_id=task_id)
-    return _env.reset().model_dump()
+    observation = _env.reset()
+    task = TASKS[task_id]
+    return {
+        "state": observation.model_dump(),
+        "info": {
+            "task_id": task_id,
+            "task_name": task["name"],
+            "difficulty": task["difficulty"],
+            "max_turns": task["max_turns"],
+            "pass_threshold": task["pass_threshold"],
+        },
+    }
 
 
 @app.post("/step")
@@ -67,7 +94,17 @@ def step(action: InterviewAction):
         raise HTTPException(status_code=400, detail="Episode done. Call /reset to start a new episode.")
 
     observation, reward, done = _env.step(action)
-    return {"observation": observation.model_dump(), "reward": reward.model_dump(), "done": done}
+    return {
+        "state": observation.model_dump(),
+        "reward": reward.reward,
+        "done": done,
+        "info": {
+            "rubric_score": reward.rubric_score,
+            "recovery_score": reward.recovery_score,
+            "specificity_score": reward.specificity_score,
+            **reward.info,
+        },
+    }
 
 
 @app.get("/state")
