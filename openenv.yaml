@@ -44,26 +44,36 @@ schemas:
     fields:
       task_id: string
       difficulty: string
+      current_difficulty: integer
       turn: integer
       max_turns: integer
       prompt: string
+      current_question: string
       done: boolean
       last_answer: string
       quality_label: string
+      behavioral_feedback: object
+      adaptive_reason: string
   state:
     model: "models.StateModel"
     type: object
     fields:
       task_id: string
       difficulty: string
+      current_difficulty: integer
       turn: integer
       max_turns: integer
       prompt: string
+      current_question: string
       done: boolean
       history: array
+      qa_history: array
+      question_history: array
       score: float
       success: boolean
       quality_label: string
+      behavioral_feedback: object
+      adaptive_reason: string
   metadata:
     model: "models.MetadataModel"
     type: object
@@ -76,7 +86,7 @@ graders:
 reward:
   type: float
   range: [0.0, 1.0]
-  formula: "reward = grader_score"
+  formula: "reward = grader_score = (clarity_score + confidence_score + relevance_score) / 3"
   partial_credit: true
   termination: "Episode terminates on success or after max_steps."
 

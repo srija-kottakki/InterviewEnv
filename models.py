@@ -19,12 +19,16 @@ class ObservationModel(BaseModel):
 
     task_id: TaskId
     difficulty: TaskId
+    current_difficulty: int
     turn: int
     max_turns: int
     prompt: str
+    current_question: str
     done: bool
     last_answer: Optional[str] = None
     quality_label: Optional[Literal["poor", "avg", "good"]] = None
+    behavioral_feedback: dict[str, object] = Field(default_factory=dict)
+    adaptive_reason: str = ""
 
 
 class StateModel(BaseModel):
@@ -32,14 +36,20 @@ class StateModel(BaseModel):
 
     task_id: TaskId
     difficulty: TaskId
+    current_difficulty: int
     turn: int
     max_turns: int
     prompt: str
+    current_question: str
     done: bool
     history: list[dict[str, str]]
+    qa_history: list[dict[str, str]]
+    question_history: list[str]
     score: float = 0.0
     success: bool = False
     quality_label: Optional[Literal["poor", "avg", "good"]] = None
+    behavioral_feedback: dict[str, object] = Field(default_factory=dict)
+    adaptive_reason: str = ""
 
 
 class MetadataModel(BaseModel):

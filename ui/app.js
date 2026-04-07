@@ -8,6 +8,8 @@ const turnBadge = document.querySelector("#turnBadge");
 const reward = document.querySelector("#reward");
 const done = document.querySelector("#done");
 const difficulty = document.querySelector("#difficulty");
+const adaptiveLevel = document.querySelector("#adaptiveLevel");
+const feedbackViewer = document.querySelector("#feedbackViewer");
 const errorBox = document.querySelector("#error");
 const stateViewer = document.querySelector("#stateViewer");
 const metadataViewer = document.querySelector("#metadataViewer");
@@ -66,10 +68,16 @@ function renderChat() {
 function renderState(state) {
   turnBadge.textContent = `${state.turn}/${state.max_turns}`;
   difficulty.textContent = state.difficulty;
+  adaptiveLevel.textContent = String(state.current_difficulty);
   done.textContent = String(state.done);
   currentHistory = state.history;
   renderChat();
   renderJson(stateViewer, state);
+  renderJson(feedbackViewer, {
+    behavioral_feedback: state.behavioral_feedback,
+    adaptive_reason: state.adaptive_reason,
+    current_question: state.current_question,
+  });
   answerInput.disabled = state.done;
   submitButton.disabled = state.done;
 }

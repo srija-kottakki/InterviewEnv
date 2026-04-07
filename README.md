@@ -9,7 +9,7 @@ pinned: false
 
 # InterviewEnv
 
-InterviewEnv is a Meta OpenEnv Round 1 submission for interview-answer evaluation. It provides typed Pydantic models, deterministic graders, three tasks with increasing difficulty, a FastAPI backend, a baseline OpenAI-client inference script, and an optional UI for manual testing.
+InterviewEnv is a Meta OpenEnv Round 1 submission for adaptive interview-answer evaluation. It provides typed Pydantic models, deterministic graders, three tasks with increasing difficulty, a FastAPI backend, a baseline OpenAI-client inference script, and an optional UI for manual testing.
 
 ## Folder Structure
 
@@ -44,6 +44,10 @@ InterviewEnv/
 | `easy` | easy | Detect correct interview keywords | `grade_easy()` |
 | `medium` | medium | Classify answer quality as poor/avg/good | `grade_medium()` |
 | `hard` | hard | Score open-ended behavioral answer with rubric | `grade_hard()` |
+
+## Adaptive Interviewer
+
+The environment maintains `current_difficulty` from 1 to 3 and chooses the next question from difficulty buckets based on the previous answer. It tracks `question_history`, `qa_history`, `behavioral_feedback`, and `adaptive_reason` in state and observation payloads.
 
 ## API
 
@@ -88,10 +92,10 @@ Defined in `models.py`:
 Reward is exactly the selected grader score:
 
 ```text
-reward = grader_score
+reward = grader_score = (clarity_score + confidence_score + relevance_score) / 3
 ```
 
-Partial credit is supported. Episodes terminate when the score reaches the task threshold or when max steps are exhausted.
+Partial credit is supported. Episodes terminate when the score reaches the task threshold or when max steps are exhausted. Behavioral feedback includes filler usage, confidence, clarity, and comments.
 
 ## Run Locally
 

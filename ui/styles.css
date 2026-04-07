@@ -238,6 +238,10 @@ pre {
   white-space: pre-wrap;
 }
 
+#feedbackViewer {
+  min-height: 170px;
+}
+
 .error {
   color: var(--danger);
   font-weight: 800;
