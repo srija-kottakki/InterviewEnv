@@ -74,7 +74,8 @@ def step(action: InterviewAction):
 def state():
     global _env
     if _env is None:
-        raise HTTPException(status_code=400, detail="Call /reset first")
+        _env = InterviewEnv(task_id="easy")
+        _env.reset()
     return _env.state().model_dump()
 
 
