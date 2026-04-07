@@ -85,6 +85,104 @@ InterviewEnv/
 ├── Dockerfile
 └── requirements.txt
 ```
+## 🌍 Environment Description
+
+InterviewEnv is a **sequential decision-making environment** that mimics the flow of a real technical or behavioral interview session.
+
+```
+[ START ] ──▶ [ STEP ] ──▶ [ STEP ] ──▶ ... ──▶ [ END ]
+   │              │                                   │
+Initialize     Candidate                         Final Score
+Interview      Answers Q                         + Feedback
+```
+
+| State   | Description                                              |
+|---------|----------------------------------------------------------|
+| `START` | Initializes the interview session and selects task track |
+| `STEP`  | Candidate receives a question and submits a response     |
+| `END`   | Session closes; final score and detailed feedback issued |
+
+The environment simulates **interviewer behavior** — it adapts based on your responses, escalates difficulty, and probes weak areas just like a human interviewer would.
+
+---
+
+## 🕹️ Action Space Definition
+
+> **Action = Natural Language Response (string)**
+
+Candidates interact with the environment through free-form natural language. There are no predefined choices or constraints — just like a real interview.
+
+**Valid action types include:**
+
+- 📝 **Explanations** — Describe your thought process or approach
+- 💻 **Code Snippets** — Write and explain solutions inline
+- 🧠 **Reasoning** — Walk through trade-offs, edge cases, or design decisions
+
+**Properties:**
+
+| Property        | Value                          |
+|-----------------|--------------------------------|
+| Type            | `string` (free-form text)      |
+| Format          | Natural language               |
+| Context-aware   | Yes — responses are evaluated relative to the current question and history |
+| Length          | Unconstrained                  |
+
+---
+
+## 👁️ Observation Space Definition
+
+> **Observation = `{ question, context, previous_feedback }`**
+
+At every `STEP`, the agent receives a structured observation:
+
+```python
+observation = {
+    "question":          str,            # The current interview question
+    "context":           str,            # Topic, difficulty, and session state
+    "previous_feedback": str | None      # Feedback from the last step (if any)
+}
+```
+
+| Field               | Type          | Description                                        |
+|---------------------|---------------|----------------------------------------------------|
+| `question`          | `str`         | The question posed by the simulated interviewer    |
+| `context`           | `str`         | Track (DSA/HR/Design), difficulty, and round info  |
+| `previous_feedback` | `str \| None` | Feedback from prior response; `None` on first step |
+
+This design enables **iterative improvement** — candidates can learn from feedback mid-session and adjust their strategy.
+
+---
+
+## 📋 Task Descriptions with Difficulty Levels
+
+InterviewEnv ships with three task tracks, each with three difficulty tiers.
+
+### 🧩 Track 1 — Data Structures & Algorithms (DSA)
+
+| Difficulty | Topics Covered                              |
+|------------|---------------------------------------------|
+| 🟢 Easy    | Arrays, strings, basic sorting              |
+| 🟡 Medium  | Recursion, binary trees, linked lists        |
+| 🔴 Hard    | Graphs, dynamic programming, advanced trees |
+
+### 🤝 Track 2 — Behavioral / HR
+
+| Difficulty | Topics Covered                                    |
+|------------|---------------------------------------------------|
+| 🟢 Easy    | Self-introductions, background questions           |
+| 🟡 Medium  | Conflict resolution, teamwork scenarios            |
+| 🔴 Hard    | Ambiguous dilemmas, leadership under pressure      |
+
+### 🏗️ Track 3 — System Design *(Extendable)*
+
+| Difficulty | Topics Covered                                         |
+|------------|--------------------------------------------------------|
+| 🟡 Medium  | Component design, API modeling                         |
+| 🔴 Hard    | Distributed architecture, scalability, trade-off analysis |
+
+> 💡 New tracks can be added by extending the task config — the environment is fully modular.
+
+---
 
 ## State Space
 
