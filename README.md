@@ -9,9 +9,29 @@ pinned: false
 
 # InterviewEnv
 
-InterviewEnv is an API-only OpenEnv Round 1 environment for deterministic interview-answer evaluation. It exposes strict `/reset`, `/step`, and `/state` endpoints and includes three tasks with increasing difficulty.
+InterviewEnv is an OpenEnv Round 1 environment for deterministic interview-answer evaluation. It exposes strict validator endpoints, typed Pydantic models, three increasing-difficulty tasks, deterministic graders, and an optional browser UI for manual testing.
 
-## API Contract
+## File Structure
+
+```text
+InterviewEnv/
+├── app.py
+├── main.py
+├── models.py
+├── graders.py
+├── inference.py
+├── openenv.yaml
+├── launch.sh
+├── Dockerfile
+├── requirements.txt
+├── env/
+├── ui/
+├── docs/
+├── examples/
+└── screenshots/
+```
+
+## OpenEnv API Contract
 
 `GET /reset?task_id=easy` or `POST /reset`
 
@@ -31,49 +51,45 @@ InterviewEnv is an API-only OpenEnv Round 1 environment for deterministic interv
 {"state": {}}
 ```
 
-The validator endpoints are API-only and do not require a UI. A lightweight browser demo is available at `GET /` and `GET /ui`; it does not change the `/reset`, `/step`, or `/state` response contracts.
+`GET /metadata` returns environment metadata, task definitions, model names, endpoint descriptions, and reward details.
+
+The validator endpoints stay API-first. The optional UI is available at `GET /` and `GET /ui/`.
 
 ## Tasks
 
 | Task | Difficulty | Description | Grader |
 |---|---|---|---|
-| `easy` | easy | Basic interview question answering | `grade_easy` |
-| `medium` | medium | Multi-turn follow-up reasoning | `grade_medium` |
-| `hard` | hard | Behavioral STAR-format interview simulation | `grade_hard` |
+| `easy` | easy | Basic interview question answering | `graders.grade_easy` |
+| `medium` | medium | Multi-turn follow-up reasoning | `graders.grade_medium` |
+| `hard` | hard | Behavioral STAR-format interview simulation | `graders.grade_hard` |
 
-## Action Space
+## Typed Models
 
-```json
-{"message": "candidate answer"}
-```
+The public Pydantic models live in `models.py`:
 
-The action model is `env.models.InterviewAction`.
-
-## Observation / State Space
-
-The state model is `env.models.InterviewState`:
-
-```json
-{
-  "task_id": "easy",
-  "difficulty": "easy",
-  "turn": 0,
-  "max_turns": 2,
-  "prompt": "Tell me about yourself...",
-  "history": [],
-  "done": false
-}
-```
+- `Action`
+- `Observation`
+- `Metadata`
+- `ResetRequest`
+- `ResetResponse`
+- `StepResponse`
+- `StateResponse`
 
 ## Reward
 
-Reward is exactly the deterministic grader score for the latest answer. Each grader returns a float in `[0.0, 1.0]` using keyword matching and answer completeness criteria.
+Reward is exactly the selected deterministic grader score for the latest action. Each grader returns a float in `[0.0, 1.0]` based on keyword matching and answer completeness.
 
 ## Run Locally
 
 ```bash
 pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 7860
+./launch.sh
+```
+
+Open:
+
+```text
+http://localhost:7860
 ```
 
 ## Baseline Inference
@@ -85,7 +101,7 @@ export HF_TOKEN=your_token
 python inference.py
 ```
 
-If `HF_TOKEN` is not set, the script uses deterministic fallback answers. Logs are emitted exactly as:
+If `HF_TOKEN` is not set, `inference.py` uses deterministic fallback answers. Logs are emitted as:
 
 ```text
 [START] {"task_id":"easy","state":{},"info":{}}
@@ -93,9 +109,15 @@ If `HF_TOKEN` is not set, the script uses deterministic fallback answers. Logs a
 [END] {"task_id":"easy","score":0.5,"steps":2,"done":true}
 ```
 
-## Docker
+## Docker / Hugging Face Space
 
 ```bash
 docker build -t interview-env .
 docker run -p 7860:7860 interview-env
+```
+
+The Docker container launches:
+
+```bash
+./launch.sh
 ```

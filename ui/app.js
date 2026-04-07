@@ -8,9 +8,13 @@ const turnBadge = document.querySelector("#turnBadge");
 const reward = document.querySelector("#reward");
 const done = document.querySelector("#done");
 const difficulty = document.querySelector("#difficulty");
-const info = document.querySelector("#info");
+const errorBox = document.querySelector("#error");
+const stateViewer = document.querySelector("#stateViewer");
+const metadataViewer = document.querySelector("#metadataViewer");
+const refreshStateButton = document.querySelector("#refreshStateButton");
+const refreshMetadataButton = document.querySelector("#refreshMetadataButton");
 
-let history = [];
+let currentHistory = [];
 
 function escapeHtml(value) {
   return String(value)
@@ -26,19 +30,27 @@ async function request(path, options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
   });
+  const data = await response.json().catch(() => null);
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(error.detail || "Request failed");
+    throw new Error(data?.detail || response.statusText || "Request failed");
   }
-  return response.json();
+  return data;
+}
+
+function setError(message = "") {
+  errorBox.textContent = message;
+}
+
+function renderJson(node, data) {
+  node.textContent = JSON.stringify(data, null, 2);
 }
 
 function renderChat() {
-  if (history.length === 0) {
-    chat.innerHTML = '<p class="empty">Choose a task and start the interview.</p>';
+  if (currentHistory.length === 0) {
+    chat.innerHTML = '<p class="empty">Choose a task and press Reset.</p>';
     return;
   }
-  chat.innerHTML = history
+  chat.innerHTML = currentHistory
     .map(
       (item) => `
         <div class="message ${escapeHtml(item.role)}">
@@ -55,21 +67,42 @@ function renderState(state) {
   turnBadge.textContent = `${state.turn}/${state.max_turns}`;
   difficulty.textContent = state.difficulty;
   done.textContent = String(state.done);
-  history = state.history;
+  currentHistory = state.history;
   renderChat();
+  renderJson(stateViewer, { state });
   answerInput.disabled = state.done;
   submitButton.disabled = state.done;
 }
 
+async function refreshState() {
+  const data = await request("/state");
+  renderState(data.state);
+}
+
+async function refreshMetadata() {
+  const data = await request("/metadata");
+  renderJson(metadataViewer, data);
+}
+
+document.querySelectorAll(".tab").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((tab) => tab.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.remove("active"));
+    button.classList.add("active");
+    document.querySelector(`#${button.dataset.tab}`).classList.add("active");
+  });
+});
+
 resetButton.addEventListener("click", async () => {
   resetButton.disabled = true;
+  setError();
   try {
     const data = await request(`/reset?task_id=${encodeURIComponent(taskSelect.value)}`);
     renderState(data.state);
     reward.textContent = "--";
-    info.textContent = JSON.stringify(data.info, null, 2);
+    renderJson(metadataViewer, data.info);
   } catch (error) {
-    info.textContent = error.message;
+    setError(error.message);
   } finally {
     resetButton.disabled = false;
   }
@@ -79,10 +112,12 @@ answerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const message = answerInput.value.trim();
   if (!message) {
+    setError("Enter an action.message before stepping.");
     return;
   }
   answerInput.value = "";
   submitButton.disabled = true;
+  setError();
   try {
     const data = await request("/step", {
       method: "POST",
@@ -91,10 +126,15 @@ answerForm.addEventListener("submit", async (event) => {
     renderState(data.state);
     reward.textContent = data.reward.toFixed(4);
     done.textContent = String(data.done);
-    info.textContent = JSON.stringify(data.info, null, 2);
+    renderJson(metadataViewer, data.info);
   } catch (error) {
-    info.textContent = error.message;
+    setError(error.message);
   } finally {
     submitButton.disabled = false;
   }
 });
+
+refreshStateButton.addEventListener("click", () => refreshState().catch((error) => setError(error.message)));
+refreshMetadataButton.addEventListener("click", () => refreshMetadata().catch((error) => setError(error.message)));
+
+refreshMetadata().catch(() => {});

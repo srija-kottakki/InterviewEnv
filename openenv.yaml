@@ -1,8 +1,21 @@
 name: InterviewEnv
 version: "1.0.0"
-description: "API-only OpenEnv environment for deterministic interview-answer evaluation."
-entrypoint: main:app
+description: "OpenEnv Round 1 interview-answer environment with deterministic typed API, graders, and optional UI."
+entrypoint: app:app
 runtime: docker
+author: "Kottakki Sai Srija"
+license: MIT
+tags:
+  - openenv
+  - interview
+  - evaluation
+  - meta-hackathon
+
+environment:
+  class: env.env.InterviewEnv
+  deterministic: true
+  episodic: true
+  supports_partial_reward: true
 
 tasks:
   - id: easy
@@ -11,25 +24,33 @@ tasks:
     description: "Answer a single introductory interview question with relevant details."
     max_turns: 2
     pass_threshold: 0.55
-    grader: env.graders.grade_easy
+    grader: graders.grade_easy
   - id: medium
     name: "Multi-turn follow-up reasoning"
     difficulty: medium
     description: "Answer follow-up interview questions with structured reasoning and adaptation."
     max_turns: 3
     pass_threshold: 0.62
-    grader: env.graders.grade_medium
+    grader: graders.grade_medium
   - id: hard
     name: "Behavioral STAR-format interview simulation"
     difficulty: hard
     description: "Use situation, task, action, and result structure for behavioral interview answers."
     max_turns: 4
     pass_threshold: 0.70
-    grader: env.graders.grade_hard
+    grader: graders.grade_hard
+
+models:
+  action: models.Action
+  observation: models.Observation
+  metadata: models.Metadata
+  reset_response: models.ResetResponse
+  step_response: models.StepResponse
+  state_response: models.StateResponse
 
 action_space:
   type: object
-  model: env.models.InterviewAction
+  model: models.Action
   fields:
     message:
       type: string
@@ -37,7 +58,7 @@ action_space:
 
 observation_space:
   type: object
-  model: env.models.InterviewState
+  model: models.Observation
   fields:
     task_id:
       type: string
@@ -57,26 +78,37 @@ observation_space:
 reward:
   type: float
   range: [0.0, 1.0]
-  function: "reward equals deterministic task grader score for the latest answer."
+  source: "grader score for latest action"
+  graders:
+    easy: graders.grade_easy
+    medium: graders.grade_medium
+    hard: graders.grade_hard
 
 api:
   reset:
     method: GET
     path: /reset
+    query:
+      task_id: "easy | medium | hard"
     response: '{"state": {...}, "info": {...}}'
   reset_post:
     method: POST
     path: /reset
+    body_model: models.ResetRequest
     response: '{"state": {...}, "info": {...}}'
   step:
     method: POST
     path: /step
+    body_model: models.Action
     response: '{"state": {...}, "reward": 0.0, "done": false, "info": {...}}'
   state:
     method: GET
     path: /state
     response: '{"state": {...}}'
+  metadata:
+    method: GET
+    path: /metadata
+    response_model: models.Metadata
 
-deterministic: true
-supports_partial_reward: true
 baseline: inference.py
+launch: launch.sh
