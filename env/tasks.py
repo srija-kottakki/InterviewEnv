@@ -4,11 +4,11 @@ from __future__ import annotations
 TASKS: dict[str, dict] = {
     "easy": {
         "id": "easy",
-        "name": "Keyword detection in an interview answer",
+        "name": "Basic HR interview",
         "difficulty": "easy",
-        "description": "Detect whether the answer includes role-relevant interview keywords.",
-        "max_turns": 2,
-        "pass_threshold": 0.55,
+        "description": "Answer basic HR interview prompts with role interest, strengths, and concise evidence.",
+        "max_turns": 3,
+        "pass_threshold": 0.78,
         "grader": "graders.grade_easy",
         "opening_prompt": "Answer this interview question: why are you interested in this role?",
         "followup_prompts": [
@@ -17,11 +17,11 @@ TASKS: dict[str, dict] = {
     },
     "medium": {
         "id": "medium",
-        "name": "Classify answer quality",
+        "name": "Technical reasoning interview",
         "difficulty": "medium",
-        "description": "Classify interview answer quality as poor, average, or good using structure and specificity.",
-        "max_turns": 3,
-        "pass_threshold": 0.65,
+        "description": "Explain technical decisions, tradeoffs, measurement, and improvement opportunities.",
+        "max_turns": 4,
+        "pass_threshold": 0.80,
         "grader": "graders.grade_medium",
         "opening_prompt": "Describe a technical or academic project and explain why your approach was effective.",
         "followup_prompts": [
@@ -31,11 +31,11 @@ TASKS: dict[str, dict] = {
     },
     "hard": {
         "id": "hard",
-        "name": "Open-ended behavioral rubric evaluation",
+        "name": "Adaptive stress interview",
         "difficulty": "hard",
-        "description": "Evaluate a behavioral interview answer on STAR structure, evidence, impact, and reflection.",
-        "max_turns": 4,
-        "pass_threshold": 0.72,
+        "description": "Handle adaptive behavioral and stress prompts using STAR evidence, consistency, and recovery.",
+        "max_turns": 5,
+        "pass_threshold": 0.82,
         "grader": "graders.grade_hard",
         "opening_prompt": "Tell me about a time you handled a difficult challenge or conflict using STAR format.",
         "followup_prompts": [

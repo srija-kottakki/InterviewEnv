@@ -1,7 +1,7 @@
 env_id: "InterviewEnv"
 name: "InterviewEnv"
-version: "1.0.0"
-description: "Meta OpenEnv Round 1 interview-answer environment with typed models, deterministic graders, and optional UI."
+version: "1.1.0"
+description: "Resume-optional adaptive RL-style interview environment with structured actions, trend-aware rewards, deterministic graders, and typed OpenEnv API models."
 entrypoint: "api.main:app"
 runtime: "docker"
 authors:
@@ -9,38 +9,60 @@ authors:
 
 tasks:
   - id: easy
-    name: "Keyword detection in an interview answer"
+    name: "Basic HR interview"
     difficulty: easy
-    description: "Detect whether the answer includes role-relevant interview keywords."
-    max_steps: 2
-    success_threshold: 0.55
+    description: "Answer HR prompts about role interest, strengths, teamwork, and project fit."
+    max_steps: 3
+    success_threshold: 0.78
     grader: "graders.grade_easy"
   - id: medium
-    name: "Classify answer quality"
+    name: "Technical reasoning interview"
     difficulty: medium
-    description: "Classify interview answer quality as poor, average, or good using structure and specificity."
-    max_steps: 3
-    success_threshold: 0.65
+    description: "Explain technical decisions, tradeoffs, measurement, and improvement plans."
+    max_steps: 4
+    success_threshold: 0.80
     grader: "graders.grade_medium"
   - id: hard
-    name: "Open-ended behavioral rubric evaluation"
+    name: "Adaptive stress interview"
     difficulty: hard
-    description: "Evaluate a behavioral interview answer on STAR structure, evidence, impact, and reflection."
-    max_steps: 4
-    success_threshold: 0.72
+    description: "Handle adaptive behavioral and stress prompts using STAR evidence, consistency, and recovery over turns."
+    max_steps: 5
+    success_threshold: 0.82
     grader: "graders.grade_hard"
 
 schemas:
   action:
     model: "models.ActionModel"
     type: object
+    additionalProperties: false
     fields:
       answer:
         type: string
-        required: true
+        required: false
+        description: "Candidate answer text. Existing clients may send only this field."
       message:
         type: string
         required: false
+        description: "Backward-compatible alias for answer."
+      answer_strategy:
+        type: string
+        enum: ["direct", "detailed", "clarify", "skip"]
+        required: false
+        default: "detailed"
+        description: "Structured RL action controlling answer style."
+      confidence_level:
+        type: integer
+        minimum: 1
+        maximum: 5
+        required: false
+        default: 3
+        description: "Self-reported confidence."
+      tone:
+        type: string
+        enum: ["neutral", "confident", "collaborative", "defensive"]
+        required: false
+        default: "neutral"
+        description: "Delivery tone that affects stress/adaptivity."
   observation:
     model: "models.ObservationModel"
     type: object
@@ -52,12 +74,19 @@ schemas:
       max_turns: integer
       prompt: string
       current_question: string
+      question: string
       done: boolean
       last_answer: string
       quality_label: string
       behavioral_feedback: object
-      adaptive_reason: string
       follow_up_question: string
+      adaptive_reason: string
+      stress_level: number
+      adaptivity_factor: number
+      score_trend: string
+      reward_breakdown: object
+      performance_history: array
+      last_action: object
   state:
     model: "models.StateModel"
     type: object
@@ -69,18 +98,26 @@ schemas:
       max_turns: integer
       prompt: string
       current_question: string
+      question: string
       done: boolean
       history: array
       qa_history: array
       question_history: array
-      score: float
+      resume_text: string
+      parsed_resume_data: object
+      last_feedback: object
+      performance_history: array
+      score_history: array
+      score_trend: string
+      stress_level: number
+      adaptivity_factor: number
+      reward_breakdown: object
+      last_action: object
+      score: number
       success: boolean
       quality_label: string
       behavioral_feedback: object
       adaptive_reason: string
-      resume_text: string
-      parsed_resume_data: object
-      last_feedback: object
   metadata:
     model: "models.MetadataModel"
     type: object
@@ -93,9 +130,17 @@ graders:
 reward:
   type: float
   range: [0.0, 1.0]
-  formula: "reward = grader_score; grader_score is calibrated from clarity, confidence, relevance, resume match, and rubric evidence"
   partial_credit: true
-  termination: "Episode terminates on success or after max_steps."
+  formula: "reward = weighted(correctness, clarity, confidence, consistency_over_time, improvement, confidence_alignment, action_strategy)"
+  components:
+    correctness: "Question/task relevance, resume match when available, and STAR/technical rubric evidence."
+    clarity: "Structure, coherence, and relevance from deterministic feedback analysis."
+    confidence: "Decisive language and authority without overclaiming."
+    consistency: "Penalty for volatile reward history across recent turns."
+    improvement: "Bonus for improving over the previous reward signal."
+    confidence_alignment: "Agreement between self-reported confidence_level and observed confidence."
+    action_strategy: "Rewards appropriate structured action choices; skip is penalized."
+  termination: "Episode terminates when reward >= task success_threshold or turn >= max_steps."
 
 api:
   reset:

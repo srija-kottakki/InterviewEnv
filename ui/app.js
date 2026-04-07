@@ -3,6 +3,9 @@ const resumeForm = document.querySelector("#resumeForm");
 const resumeInput = document.querySelector("#resumeInput");
 const uploadButton = document.querySelector("#uploadButton");
 const resetButton = document.querySelector("#resetButton");
+const strategySelect = document.querySelector("#strategySelect");
+const confidenceSelect = document.querySelector("#confidenceSelect");
+const toneSelect = document.querySelector("#toneSelect");
 const answerForm = document.querySelector("#answerForm");
 const answerInput = document.querySelector("#answerInput");
 const submitButton = document.querySelector("#submitButton");
@@ -12,6 +15,8 @@ const reward = document.querySelector("#reward");
 const done = document.querySelector("#done");
 const difficulty = document.querySelector("#difficulty");
 const adaptiveLevel = document.querySelector("#adaptiveLevel");
+const stressLevel = document.querySelector("#stressLevel");
+const scoreTrend = document.querySelector("#scoreTrend");
 const feedbackViewer = document.querySelector("#feedbackViewer");
 const resumeViewer = document.querySelector("#resumeViewer");
 const errorBox = document.querySelector("#error");
@@ -73,12 +78,17 @@ function renderState(state) {
   turnBadge.textContent = `${state.turn}/${state.max_turns}`;
   difficulty.textContent = state.difficulty;
   adaptiveLevel.textContent = String(state.current_difficulty);
+  stressLevel.textContent = Number(state.stress_level || 0).toFixed(2);
+  scoreTrend.textContent = state.score_trend || "flat";
   done.textContent = String(state.done);
   currentHistory = state.history;
   renderChat();
   renderJson(stateViewer, state);
   renderJson(feedbackViewer, {
     behavioral_feedback: state.behavioral_feedback,
+    reward_breakdown: state.reward_breakdown,
+    last_action: state.last_action,
+    score_history: state.score_history,
     adaptive_reason: state.adaptive_reason,
     follow_up_question: state.current_question,
     current_question: state.current_question,
@@ -164,7 +174,12 @@ answerForm.addEventListener("submit", async (event) => {
   try {
     const data = await request("/step", {
       method: "POST",
-      body: JSON.stringify({ answer: message }),
+      body: JSON.stringify({
+        answer: message,
+        answer_strategy: strategySelect.value,
+        confidence_level: Number(confidenceSelect.value),
+        tone: toneSelect.value,
+      }),
     });
     const state = await request("/state");
     renderState(state);

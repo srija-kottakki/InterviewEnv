@@ -9,7 +9,18 @@ pinned: false
 
 # InterviewEnv
 
-InterviewEnv is a Meta OpenEnv Round 1 submission for adaptive interview-answer evaluation. It provides typed Pydantic models, deterministic graders, three tasks with increasing difficulty, a FastAPI backend, a baseline OpenAI-client inference script, and an optional UI for manual testing.
+InterviewEnv is an OpenEnv Round 1 submission that turns interview practice into a typed, deterministic, RL-style environment. An agent receives an adaptive interview state, chooses a structured interview action, and receives a reward from deterministic graders that score correctness, clarity, confidence, consistency, and improvement over time.
+
+The app works with or without resume upload. Without a resume, it uses a general interview bank. With a PDF/text resume, it parses skills, projects, tools, education, and experience to personalize follow-up questions.
+
+## Why This Is RL-Based
+
+InterviewEnv is not only an LLM evaluator. It has a Markov-style transition loop:
+
+- **State**: current question, task, difficulty, stress level, score trend, score history, behavioral feedback, resume context, question history, QA history, and performance history.
+- **Action**: structured candidate policy choice with `answer`, `answer_strategy`, `confidence_level`, and `tone`.
+- **Transition**: `step(action)` grades the answer, updates performance history, adapts difficulty, updates stress/adaptivity factor, selects a new question, and terminates on success or max turns.
+- **Reward**: deterministic float in `[0.0, 1.0]` using current performance plus consistency and improvement over previous steps.
 
 ## Folder Structure
 
@@ -24,7 +35,14 @@ InterviewEnv/
 │   ├── graders.py
 │   ├── models.py
 │   └── tasks.py
+├── utils/
+│   ├── __init__.py
+│   ├── feedback_analyzer.py
+│   └── resume_parser.py
 ├── ui/
+│   ├── app.js
+│   ├── index.html
+│   └── styles.css
 ├── docs/
 ├── examples/
 ├── screenshots/
@@ -37,36 +55,126 @@ InterviewEnv/
 └── requirements.txt
 ```
 
+## State Space
+
+`StateModel` includes:
+
+```json
+{
+  "task_id": "easy",
+  "difficulty": "easy",
+  "current_difficulty": 1,
+  "turn": 0,
+  "max_turns": 3,
+  "current_question": "Why are you interested in this role?",
+  "history": [],
+  "qa_history": [],
+  "question_history": [],
+  "resume_text": "",
+  "parsed_resume_data": {},
+  "behavioral_feedback": {},
+  "performance_history": [],
+  "score_history": [],
+  "score_trend": "flat",
+  "stress_level": 0.15,
+  "adaptivity_factor": 0.0,
+  "reward_breakdown": {},
+  "last_action": {},
+  "score": 0.0,
+  "success": false,
+  "done": false
+}
+```
+
+## Action Space
+
+Existing validators can still send only `answer`, but the stronger OpenEnv action is:
+
+```json
+{
+  "answer": "I would explain the project goal, tradeoffs, result, and what I learned.",
+  "answer_strategy": "detailed",
+  "confidence_level": 4,
+  "tone": "collaborative"
+}
+```
+
+Valid values:
+
+- `answer_strategy`: `direct`, `detailed`, `clarify`, `skip`
+- `confidence_level`: integer `1` to `5`
+- `tone`: `neutral`, `confident`, `collaborative`, `defensive`
+
+These fields affect reward, stress, difficulty adaptation, and next-question selection.
+
 ## Tasks
 
-| Task | Difficulty | Goal | Grader |
-|---|---|---|---|
-| `easy` | easy | Detect correct interview keywords | `grade_easy()` |
-| `medium` | medium | Classify answer quality as poor/avg/good | `grade_medium()` |
-| `hard` | hard | Score open-ended behavioral answer with rubric | `grade_hard()` |
+| Task | Name | Max Steps | Success | Environment Behavior |
+|---|---|---:|---:|---|
+| `easy` | Basic HR interview | 3 | 0.78 | Starts at difficulty 1 and rewards role-fit keywords, concise evidence, and confidence. |
+| `medium` | Technical reasoning interview | 4 | 0.80 | Starts at difficulty 2 and rewards tradeoffs, measurement, specificity, and improvement. |
+| `hard` | Adaptive stress interview | 5 | 0.82 | Starts at difficulty 3 and rewards STAR structure, impact, recovery, consistency, and stress handling. |
 
-## Adaptive Interviewer
+## Reward Logic
 
-The environment maintains `current_difficulty` from 1 to 3 and chooses the next question from difficulty buckets based on the previous answer. Resume upload is optional: without a resume, InterviewEnv uses a general interview question bank; after a resume is uploaded, it personalizes project, skill, and experience questions from parsed resume context. It tracks `resume_text`, `parsed_resume_data`, `question_history`, `qa_history`, `behavioral_feedback`, `last_feedback`, and `adaptive_reason` in state payloads.
+Reward is deterministic and always clamped to `[0.0, 1.0]`.
 
-## API
+```text
+reward = weighted(
+  correctness,
+  clarity,
+  confidence,
+  consistency_over_time,
+  improvement_over_previous_step,
+  confidence_alignment,
+  action_strategy
+)
+```
+
+Components:
+
+- `correctness`: question relevance, task-specific rubric keywords, resume match when available.
+- `clarity`: structure, coherence, and directness from deterministic feedback analysis.
+- `confidence`: decisive language and authority.
+- `consistency_over_time`: avoids highly volatile performance across recent steps.
+- `improvement_over_previous_step`: rewards upward score trend.
+- `confidence_alignment`: compares claimed `confidence_level` against observed confidence.
+- `action_strategy`: rewards suitable strategy choices and penalizes `skip`.
+
+## API Contract
 
 `GET /reset?task_id=easy`
 
 Returns `StateModel`.
 
-`POST /step`
-
-Request:
+`POST /reset`
 
 ```json
-{"answer": "candidate answer"}
+{"task_id": "medium"}
+```
+
+Returns `StateModel`.
+
+`POST /step`
+
+```json
+{
+  "answer": "Using STAR, the situation was a team conflict...",
+  "answer_strategy": "detailed",
+  "confidence_level": 4,
+  "tone": "collaborative"
+}
 ```
 
 Returns:
 
 ```json
-{"observation": {}, "reward": 0.0, "done": false, "info": {}}
+{
+  "observation": {},
+  "reward": 0.0,
+  "done": false,
+  "info": {}
+}
 ```
 
 `GET /state`
@@ -75,31 +183,11 @@ Returns `StateModel`.
 
 `GET /metadata`
 
-Returns `MetadataModel` with `env_id`, `version`, `authors`, schemas, and task list.
+Returns `MetadataModel` with schemas, tasks, graders, and endpoint information.
 
 `POST /upload_resume`
 
-Optional. Uploads a PDF or text resume as `multipart/form-data` field `file`, parses skills, projects, experience, education, and tools, and stores the parsed result in state. The environment still works without calling this endpoint.
-
-## Models
-
-Defined in `models.py`:
-
-- `ActionModel`
-- `ObservationModel`
-- `StateModel`
-- `MetadataModel`
-- `StepResponseModel`
-
-## Reward
-
-Reward is exactly the selected grader score:
-
-```text
-reward = grader_score
-```
-
-The grader uses calibrated task-specific weights over clarity, confidence, relevance, resume match, and STAR/rubric evidence. Partial credit is supported. Episodes terminate when the score reaches the task threshold or when max steps are exhausted. Behavioral feedback includes filler usage, confidence, clarity, and comments.
+Optional. Upload a PDF or text resume as `multipart/form-data` field `file`. The environment still works without this endpoint.
 
 ## Run Locally
 
@@ -108,13 +196,19 @@ pip install -r requirements.txt
 ./launch.sh
 ```
 
-Open the optional UI:
+Open the UI:
 
 ```text
 http://localhost:7860
 ```
 
 ## Inference
+
+The baseline script uses the OpenAI client with:
+
+- `API_BASE_URL`
+- `MODEL_NAME`
+- `HF_TOKEN`
 
 ```bash
 export API_BASE_URL=https://router.huggingface.co/v1
@@ -123,13 +217,16 @@ export HF_TOKEN=your_token
 python inference.py
 ```
 
-The script uses the OpenAI client and emits:
+Strict log format:
 
 ```text
 [START]
-[STEP] {"task_id":"easy","step":1,"action":{"answer":"..."},"observation":{},"reward":0.5,"done":false,"info":{}}
-[END] {"task_id":"easy","score":0.5,"steps":2,"done":true}
+[STEP] {"task_id":"easy","step":1,"action":{},"observation":{},"reward":0.5,"done":false,"info":{}}
+[STEP] {"task_id":"medium","step":1,"action":{},"observation":{},"reward":0.6,"done":false,"info":{}}
+[END] {"env_id":"InterviewEnv","model":"gpt-4o-mini","tasks":[],"mean_score":0.0}
 ```
+
+If `HF_TOKEN` is not set, inference uses deterministic fallback actions so validators can still run it quickly.
 
 ## Docker / Hugging Face
 
@@ -137,3 +234,5 @@ The script uses the OpenAI client and emits:
 docker build -t interview-env .
 docker run -p 7860:7860 interview-env
 ```
+
+The Space runs FastAPI through `launch.sh` and exposes port `7860`.

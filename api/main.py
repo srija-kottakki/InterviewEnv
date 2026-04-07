@@ -39,9 +39,9 @@ def root():
 def metadata() -> MetadataModel:
     return MetadataModel(
         env_id="InterviewEnv",
-        version="1.0.0",
+        version="1.1.0",
         authors=["Kottakki Sai Srija"],
-        description="OpenEnv Round 1 interview-answer environment with deterministic typed models and graders.",
+        description="OpenEnv Round 1 adaptive RL-style interview environment with structured actions, trend-aware rewards, resume context, and deterministic graders.",
         action_schema=ActionModel.model_json_schema(),
         observation_schema=StepResponseModel.model_json_schema()["properties"]["observation"],
         state_schema=StateModel.model_json_schema(),

@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 TaskId = Literal["easy", "medium", "hard"]
+AnswerStrategy = Literal["direct", "detailed", "clarify", "skip"]
+Tone = Literal["neutral", "confident", "collaborative", "defensive"]
 
 
 class ActionModel(BaseModel):
@@ -13,6 +15,12 @@ class ActionModel(BaseModel):
 
     answer: str = Field(default="", description="Candidate answer submitted by the agent.")
     message: str = Field(default="", description="Backward-compatible alias for answer.")
+    answer_strategy: AnswerStrategy = Field(
+        default="detailed",
+        description="RL action choice controlling how the candidate approaches the answer.",
+    )
+    confidence_level: int = Field(default=3, ge=1, le=5, description="Self-reported confidence from 1 to 5.")
+    tone: Tone = Field(default="neutral", description="Candidate delivery tone.")
 
     def text(self) -> str:
         return (self.answer or self.message).strip()
@@ -35,6 +43,12 @@ class ObservationModel(BaseModel):
     behavioral_feedback: dict[str, object] = Field(default_factory=dict)
     follow_up_question: Optional[str] = None
     adaptive_reason: str = ""
+    stress_level: float = 0.0
+    adaptivity_factor: float = 0.0
+    score_trend: Literal["flat", "improving", "declining"] = "flat"
+    reward_breakdown: dict[str, float] = Field(default_factory=dict)
+    performance_history: list[dict[str, object]] = Field(default_factory=list)
+    last_action: dict[str, object] = Field(default_factory=dict)
 
 
 class StateModel(BaseModel):
@@ -55,6 +69,13 @@ class StateModel(BaseModel):
     resume_text: str = ""
     parsed_resume_data: dict[str, object] = Field(default_factory=dict)
     last_feedback: dict[str, object] = Field(default_factory=dict)
+    performance_history: list[dict[str, object]] = Field(default_factory=list)
+    score_history: list[float] = Field(default_factory=list)
+    score_trend: Literal["flat", "improving", "declining"] = "flat"
+    stress_level: float = 0.0
+    adaptivity_factor: float = 0.0
+    reward_breakdown: dict[str, float] = Field(default_factory=dict)
+    last_action: dict[str, object] = Field(default_factory=dict)
     score: float = 0.0
     success: bool = False
     quality_label: Optional[Literal["poor", "avg", "good"]] = None
