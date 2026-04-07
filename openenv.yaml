@@ -156,7 +156,7 @@ reward:
     confidence_alignment: "Agreement between self-reported confidence_level and observed confidence."
     action_strategy: "Rewards appropriate structured action choices; skip is penalized."
     repetition_penalty: "Penalizes repeated answers from the recent QA memory."
-    cumulative_learning: "State exposes average_score, total_score, turns_taken, and per-answer score_history."
+    cumulative_learning: "State exposes average_score, total_score, turns, turns_taken, and per-answer score_history."
   termination: "Episode terminates when average_score >= task success_threshold after at least two turns or turn >= max_steps."
 
 api:

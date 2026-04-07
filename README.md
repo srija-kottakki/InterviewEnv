@@ -22,23 +22,25 @@ InterviewEnv is not only an LLM evaluator. It has a Markov-style transition loop
 - **Transition**: `step(action)` grades the answer, shapes reward from improvement and memory, updates cumulative score/performance history, adapts difficulty, updates stress/adaptivity factor, selects a new question, and terminates on sustained success or max turns.
 - **Reward**: deterministic shaped float in `[0.0, 1.0]` using current performance, strategy/confidence choices, consistency, improvement over previous steps, and repetition penalties.
 
-## 🧠 Reinforcement Learning Design
+## 🧠 Reinforcement Learning Environment
 
-This environment models a **sequential interview process** where agent performance evolves over time.
+InterviewEnv is a sequential decision-making environment where:
 
-- The agent receives **cumulative rewards** based on answer quality, improvement, and consistency.
-- Interview difficulty **adapts dynamically** based on the agent’s past performance.
-- The system tracks **learning progression**, not just single-step correctness.
+- Each agent action influences future interview difficulty
+- Rewards are accumulated across multiple steps
+- Performance improves over time through feedback and adaptation
 
-## 🎯 Agent Objective
+Unlike static evaluation systems, this environment models a **dynamic interview process** where the agent must learn, adapt, and improve across turns.
 
-The agent’s goal is to **maximize cumulative interview performance** across multiple turns by:
+## 🎯 Objective
 
-- Improving answer quality step-by-step
+The agent’s goal is to maximize cumulative reward by:
+
+- Improving answer quality
 - Maintaining consistency
 - Adapting to increasing difficulty
 
-This creates a true reinforcement learning loop where actions influence future states and rewards.
+This creates a true reinforcement learning loop with evolving state transitions.
 
 ## Folder Structure
 
@@ -100,6 +102,7 @@ InterviewEnv/
   "learning_metrics": {
     "average_score": 0.0,
     "total_score": 0.0,
+    "turns": 0,
     "turns_taken": 0,
     "score_history": []
   },

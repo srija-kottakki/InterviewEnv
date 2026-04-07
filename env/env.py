@@ -191,7 +191,7 @@ class InterviewEnv:
             adaptivity_factor=self._adaptivity_factor,
             reward_breakdown=dict(self._reward_breakdown),
             last_action=dict(self._last_action),
-            learning_metrics=dict(self._learning_metrics),
+            learning_metrics=self._state_learning_metrics(),
             score=self._score,
             success=self._success,
             quality_label=self._quality_label,
@@ -221,18 +221,29 @@ class InterviewEnv:
             reward_breakdown=dict(self._reward_breakdown),
             performance_history=list(self._performance_history),
             last_action=dict(self._last_action),
-            learning_metrics=dict(self._learning_metrics),
+            learning_metrics=self._state_learning_metrics(),
         )
 
     def _shape_reward(self, raw_reward: float, answer: str, action: ActionModel) -> float:
         improvement = raw_reward - self._prev_reward
         progress_bonus = max(improvement, 0.0)
         consistency_bonus = 0.10 if raw_reward > 0.60 else 0.0
-        strategy_bonus = {"structured": 0.10, "detailed": 0.05, "concise": 0.02, "direct": 0.02}.get(action.normalized_strategy(), 0.0)
         confidence_bonus = 0.15 * action.normalized_confidence()
+        strategy_bonus = 0.0
+        if action.normalized_strategy() == "structured":
+            strategy_bonus = 0.10
+        elif action.normalized_strategy() == "detailed":
+            strategy_bonus = 0.05
+        elif action.normalized_strategy() in {"concise", "direct"}:
+            strategy_bonus = 0.02
         repetition_penalty = 0.20 if answer and answer in [qa["answer"] for qa in self._qa_history[:-1][-2:]] else 0.0
         difficulty_weight = {"easy": 0.8, "medium": 1.0, "hard": 1.2}[self._task_id]
-        shaped = (raw_reward + 0.20 * progress_bonus + consistency_bonus + strategy_bonus + confidence_bonus - repetition_penalty)
+        shaped = raw_reward
+        shaped += 0.20 * progress_bonus
+        shaped += strategy_bonus
+        shaped += confidence_bonus
+        shaped += consistency_bonus
+        shaped -= repetition_penalty
         shaped *= difficulty_weight
         self._reward_breakdown.update(
             {
@@ -266,6 +277,7 @@ class InterviewEnv:
         return {
             "average_score": average_score,
             "total_score": cumulative_score,
+            "turns": len(self._score_history),
             "turns_taken": len(self._score_history),
             "score_history": [qa.get("reward", 0.0) for qa in self._qa_history],
             "previous_average_score": previous_average,
@@ -275,6 +287,19 @@ class InterviewEnv:
             "current_reward": round(current_reward, 4),
             "raw_reward": round(raw_reward, 4),
         }
+
+    def _state_learning_metrics(self) -> dict[str, object]:
+        metrics = dict(self._learning_metrics)
+        metrics.update(
+            {
+                "average_score": round(self._score / max(self._turn, 1), 4),
+                "total_score": round(self._score, 4),
+                "turns": self._turn,
+                "turns_taken": self._turn,
+                "score_history": [qa.get("reward", 0.0) for qa in self._qa_history],
+            }
+        )
+        return metrics
 
     def _adapt_difficulty(self, relevance: float) -> int:
         average_score = self._average_score()
@@ -425,7 +450,7 @@ class InterviewEnv:
             "stress_level": self._stress_level,
             "adaptivity_factor": self._adaptivity_factor,
             "reward_breakdown": dict(self._reward_breakdown),
-            "learning_metrics": dict(self._learning_metrics),
+            "learning_metrics": self._state_learning_metrics(),
             "success": self._success,
             "behavioral_feedback": dict(self._behavioral_feedback),
             "adaptive_reason": self._adaptive_reason,
