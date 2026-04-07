@@ -9,87 +9,150 @@ from interview_logic import evaluate_answer, generate_question, normalize_diffic
 APP_CSS = """
 :root {
   --surface: #ffffff;
-  --muted: #64748b;
-  --ink: #0f172a;
-  --line: #e2e8f0;
-  --blue: #2563eb;
-  --blue-dark: #1d4ed8;
-  --green: #16a34a;
+  --surface-soft: #f8fafc;
+  --muted: #667085;
+  --ink: #101828;
+  --line: #e4e7ec;
+  --blue: #175cd3;
+  --blue-dark: #1849a9;
+  --green: #027a48;
+  --green-soft: #ecfdf3;
 }
 
 .gradio-container {
-  max-width: 1120px !important;
-  margin: 0 auto !important;
-  background: #f8fafc !important;
+  max-width: none !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #f5f7fb !important;
   color: var(--ink) !important;
+}
+
+.main,
+.contain {
+  max-width: none !important;
+  padding: 0 !important;
 }
 
 footer {
   display: none !important;
 }
 
-.hero-card {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-  border-radius: 28px;
-  color: white;
-  margin-bottom: 18px;
-  padding: 30px;
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+.app-shell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 100vh;
 }
 
-.hero-card h1 {
-  font-size: 44px;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  margin: 0 0 8px;
-}
-
-.hero-card p {
-  color: #dbeafe;
-  font-size: 16px;
-  margin: 0;
-  max-width: 780px;
-}
-
-.pill-row {
+.sidebar {
+  background: #101828;
+  color: #ffffff;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 22px;
+  flex-direction: column;
+  gap: 28px;
+  padding: 32px 28px;
+}
+
+.brand-kicker {
+  color: #84caff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.sidebar h1 {
+  font-size: 42px;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  margin: 0 0 14px;
+}
+
+.sidebar p {
+  color: #d0d5dd;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.sidebar-steps {
+  display: grid;
+  gap: 12px;
 }
 
 .step-pill {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: #f9fafb;
+  display: flex;
+  font-size: 14px;
+  font-weight: 750;
+  gap: 10px;
+  padding: 12px;
+}
+
+.step-number {
+  align-items: center;
+  background: #2e90fa;
   border-radius: 999px;
-  color: #eff6ff;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 8px 12px;
+  display: inline-flex;
+  font-size: 12px;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.content {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+}
+
+.topbar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.topbar h2 {
+  font-size: 28px;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.topbar p {
+  color: var(--muted);
+  margin: 4px 0 0;
 }
 
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 24px;
-  box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  box-shadow: none;
   padding: 18px;
 }
 
 .section-label {
-  color: var(--blue-dark);
+  color: var(--muted);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.12em;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   text-transform: uppercase;
 }
 
 .question-card {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 22px;
-  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #d1e9ff;
+  border-left: 5px solid var(--blue);
+  border-radius: 18px;
+  padding: 22px;
 }
 
 .question-card h3 {
@@ -102,25 +165,25 @@ footer {
 
 .question-card p {
   color: #0f172a;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 750;
   line-height: 1.38;
   margin: 0;
 }
 
 .feedback-card {
-  background: #ffffff;
+  background: #fcfcfd;
   border: 1px solid var(--line);
-  border-radius: 22px;
+  border-radius: 18px;
   padding: 18px;
 }
 
 .score-badge {
   align-items: center;
-  background: #dcfce7;
-  border: 1px solid #bbf7d0;
+  background: var(--green-soft);
+  border: 1px solid #abefc6;
   border-radius: 999px;
-  color: #166534;
+  color: var(--green);
   display: inline-flex;
   font-size: 16px;
   font-weight: 900;
@@ -134,9 +197,9 @@ footer {
 }
 
 .feedback-item {
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 14px;
 }
 
@@ -151,9 +214,9 @@ footer {
 }
 
 .summary-card {
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 14px;
   color: #334155;
   font-size: 14px;
   line-height: 1.55;
@@ -174,6 +237,30 @@ footer {
 .gr-button-primary:hover {
   background: var(--blue-dark) !important;
 }
+
+textarea,
+input,
+select {
+  border-radius: 12px !important;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    min-height: auto;
+  }
+
+  .content {
+    padding: 18px;
+  }
+
+  .question-card p {
+    font-size: 19px;
+  }
+}
 """
 
 
@@ -186,16 +273,27 @@ def build_gradio_demo():
 
         gr.HTML(
             """
-            <section class="hero-card">
-              <h1>InterviewEnv</h1>
-              <p>AI mock interview simulator with adaptive questions and real-time interviewer-style feedback.</p>
-              <div class="pill-row">
-                <span class="step-pill">1. Select difficulty</span>
-                <span class="step-pill">2. Generate question</span>
-                <span class="step-pill">3. Submit answer</span>
-                <span class="step-pill">4. Improve with feedback</span>
-              </div>
-            </section>
+            <div class="app-shell">
+              <aside class="sidebar">
+                <div>
+                  <div class="brand-kicker">AI Interview Simulator</div>
+                  <h1>InterviewEnv</h1>
+                  <p>Practice interview answers with adaptive questions and instant interviewer-style feedback.</p>
+                </div>
+                <div class="sidebar-steps">
+                  <div class="step-pill"><span class="step-number">1</span>Select difficulty</div>
+                  <div class="step-pill"><span class="step-number">2</span>Generate question</div>
+                  <div class="step-pill"><span class="step-number">3</span>Submit answer</div>
+                  <div class="step-pill"><span class="step-number">4</span>Improve with feedback</div>
+                </div>
+              </aside>
+              <main class="content">
+                <div class="topbar">
+                  <div>
+                    <h2>Mock Interview Workspace</h2>
+                    <p>Minimal flow for fast demos: question, answer, feedback.</p>
+                  </div>
+                </div>
             """
         )
 
@@ -245,6 +343,8 @@ def build_gradio_demo():
                 with gr.Group(elem_classes=["panel"]):
                     gr.HTML('<div class="section-label">Feedback</div>')
                     feedback_box = gr.HTML(_render_empty_feedback())
+
+        gr.HTML("</main></div>")
 
         generate_button.click(
             fn=_on_generate_question,
