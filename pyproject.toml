@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "interviewenv"
+version = "1.1.0"
+description = "OpenEnv adaptive interview environment with typed API models, deterministic graders, and a lightweight hackathon demo UI."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Kottakki Sai Srija" }
+]
+dependencies = [
+  "fastapi==0.115.6",
+  "uvicorn==0.34.0",
+  "pydantic==2.10.4",
+  "openai==1.59.6",
+  "pyyaml==6.0.2",
+  "python-multipart==0.0.9",
+  "pypdf==4.3.1",
+]
+
+[project.urls]
+Homepage = "https://huggingface.co/spaces/srija-kottakki/InterviewEnv"
+Repository = "https://github.com/srija-kottakki/InterviewEnv"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["app", "main", "models", "graders", "inference"]
+
+[tool.setuptools.packages.find]
+include = ["api*", "env*", "utils*", "ui*"]
