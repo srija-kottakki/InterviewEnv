@@ -31,14 +31,6 @@ Real interviews involve adaptive difficulty, multi-turn reasoning, and behaviora
 - Handle increasing challenge levels
 - Improve through feedback loops
 
-### Who is it for?
-
-- RL researchers
-- AI/ML engineers
-- HR-tech builders
-- Hackathon participants
-- Students learning RL or LLM agent design
-
 ### Real-World Use Cases
 
 - Interview preparation platforms
@@ -48,6 +40,16 @@ Real interviews involve adaptive difficulty, multi-turn reasoning, and behaviora
 - AI coaching and assessment tools
 
 ---
+
+
+
+
+https://github.com/user-attachments/assets/61159e11-12c2-4de3-93c6-c482f28236da
+
+
+
+
+
 
 ## 🏗️ Environment Description
 
