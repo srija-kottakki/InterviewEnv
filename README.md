@@ -49,6 +49,12 @@ Real interviews involve adaptive difficulty, multi-turn reasoning, and behaviora
 
 ---
 
+
+https://github.com/user-attachments/assets/0c5504db-ded7-46bd-b8f1-2113c6d9504a
+
+
+
+
 ## 🏗️ Environment Description
 
 InterviewEnv simulates a full interview loop:
