@@ -50,7 +50,11 @@ Real interviews involve adaptive difficulty, multi-turn reasoning, and behaviora
 ---
 
 
-https://github.com/user-attachments/assets/0c5504db-ded7-46bd-b8f1-2113c6d9504a
+
+
+https://github.com/user-attachments/assets/61159e11-12c2-4de3-93c6-c482f28236da
+
+
 
 
 
