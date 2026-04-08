@@ -1,3 +1,13 @@
+---
+title: InterviewEnv
+emoji: "🎙️"
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🎯 InterviewEnv
 
 > **A Reinforcement-Learning Ready AI Interview Simulation Environment**
@@ -309,5 +319,4 @@ This project is released under the [MIT License](LICENSE).
 
 [![GitHub](https://img.shields.io/badge/GitHub-srija--kottakki-black?logo=github)](https://github.com/srija-kottakki)
 [![HuggingFace](https://img.shields.io/badge/🤗-srija--kottakki-blue)](https://huggingface.co/srija-kottakki)
-
 
