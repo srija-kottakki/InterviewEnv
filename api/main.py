@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 from env.env import InterviewEnv
 from env.tasks import TASKS
@@ -15,15 +12,10 @@ from utils.resume_parser import extract_resume_text, parse_resume_text
 
 try:
     import gradio as gr
-
     from ui.gradio_app import build_gradio_demo
-except Exception:
+except ModuleNotFoundError:
     gr = None
     build_gradio_demo = None
-
-
-BASE_DIR = Path(__file__).resolve().parents[1]
-UI_DIR = BASE_DIR / "ui"
 
 app = FastAPI(title="InterviewEnv", version="1.0.0")
 app.add_middleware(
@@ -33,15 +25,17 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
-app.mount("/ui", StaticFiles(directory=UI_DIR, html=True), name="ui")
 
 ENV = InterviewEnv()
 
 
-if gr is None or build_gradio_demo is None:
-    @app.get("/")
-    def root():
-        return FileResponse(UI_DIR / "index.html")
+@app.get("/health")
+def health():
+    return {
+        "env_id": "InterviewEnv",
+        "status": "ok",
+        "message": "InterviewEnv API is running. Use /metadata for schemas and /docs for interactive API docs.",
+    }
 
 
 @app.get("/metadata", response_model=MetadataModel)
@@ -108,3 +102,12 @@ def state() -> StateModel:
 
 if gr is not None and build_gradio_demo is not None:
     app = gr.mount_gradio_app(app, build_gradio_demo(), path="/")
+else:
+
+    @app.get("/")
+    def root():
+        return {
+            "env_id": "InterviewEnv",
+            "status": "ui_unavailable",
+            "message": "Install requirements.txt to enable the Gradio UI. The OpenEnv API endpoints are available.",
+        }

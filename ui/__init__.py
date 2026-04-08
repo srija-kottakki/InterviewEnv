@@ -1,1 +1,2 @@
-"""UI package for the InterviewEnv demo surface."""
+"""UI package for the Gradio demo."""
+
