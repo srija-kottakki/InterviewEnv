@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from env.env import InterviewEnv
 from env.tasks import TASKS
@@ -20,10 +23,19 @@ app.add_middleware(
 )
 
 ENV = InterviewEnv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+UI_DIR = BASE_DIR / "ui"
+
+app.mount("/assets", StaticFiles(directory=UI_DIR), name="assets")
 
 
 @app.get("/")
 def root():
+    return FileResponse(UI_DIR / "index.html")
+
+
+@app.get("/api")
+def api_root():
     return {
         "env_id": "InterviewEnv",
         "status": "ok",

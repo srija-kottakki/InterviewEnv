@@ -13,10 +13,19 @@ InterviewEnv is an OpenEnv Round 1 submission that turns interview practice into
 
 The app works with or without resume upload. Without a resume, it uses a general interview bank. With a PDF/text resume, it parses skills, projects, tools, education, and experience to personalize follow-up questions.
 
-## API Flow
+## Demo Flow
 
-The live Space is API-only and exposes the OpenEnv endpoints directly:
+The live Space opens to a clean browser UI for quick hackathon demos:
 
+- Select `Easy`, `Medium`, or `Hard`
+- Optionally upload a resume
+- Click `Generate Question`
+- Submit an answer with strategy and confidence
+- Review the score, behavioral feedback, and adaptive next question
+
+The OpenEnv API remains available behind the UI:
+
+- `GET /api`
 - `GET /metadata`
 - `GET /reset?task_id=easy`
 - `POST /step`
@@ -69,6 +78,10 @@ InterviewEnv/
 │   ├── __init__.py
 │   ├── feedback_analyzer.py
 │   └── resume_parser.py
+├── ui/
+│   ├── app.js
+│   ├── index.html
+│   └── styles.css
 ├── docs/
 ├── examples/
 ├── screenshots/

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InterviewEnv</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero card">
+        <div class="eyebrow">Hackathon Demo</div>
+        <h1>InterviewEnv</h1>
+        <p class="hero-copy">
+          Practice adaptive interview questions with instant feedback, reward-aware scoring,
+          and optional resume personalization.
+        </p>
+        <div class="hero-links">
+          <a href="/metadata" target="_blank" rel="noreferrer">API Metadata</a>
+          <a href="/docs" target="_blank" rel="noreferrer">FastAPI Docs</a>
+        </div>
+      </header>
+
+      <main class="main-stack">
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Session Setup</p>
+              <h2>Start a mock interview</h2>
+            </div>
+            <span class="status-pill" id="appStatus">Ready</span>
+          </div>
+
+          <div class="setup-grid">
+            <label class="field">
+              <span>Difficulty</span>
+              <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Answer Strategy</span>
+              <select id="strategy">
+                <option value="structured">Structured</option>
+                <option value="detailed">Detailed</option>
+                <option value="direct">Direct</option>
+                <option value="clarify">Clarify</option>
+              </select>
+            </label>
+
+            <label class="field slider-field">
+              <span>Confidence <strong id="confidenceValue">70%</strong></span>
+              <input id="confidence" type="range" min="0" max="100" value="70" />
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="startButton" class="primary-button">Generate Question</button>
+            <button id="refreshButton" class="secondary-button" type="button">Refresh State</button>
+          </div>
+
+          <div class="resume-row">
+            <label class="field file-field">
+              <span>Optional Resume Upload</span>
+              <input id="resumeFile" type="file" accept=".pdf,.txt" />
+            </label>
+            <button id="uploadButton" class="secondary-button" type="button">Upload Resume</button>
+          </div>
+          <p class="helper-text" id="resumeStatus">
+            Resume upload is optional. Without it, the environment uses general interview questions.
+          </p>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Interviewer</p>
+              <h2>Current Question</h2>
+            </div>
+            <div class="mini-badges">
+              <span class="soft-badge" id="taskBadge">No session</span>
+              <span class="soft-badge" id="turnBadge">Turn 0</span>
+            </div>
+          </div>
+          <div class="question-card" id="questionCard">
+            Click <strong>Generate Question</strong> to begin your mock interview.
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Your Response</p>
+              <h2>Write your answer</h2>
+            </div>
+          </div>
+          <textarea
+            id="answerInput"
+            rows="7"
+            placeholder="Give a clear answer with context, what you did, and the outcome."
+          ></textarea>
+          <div class="button-row">
+            <button id="submitButton" class="primary-button">Submit Answer</button>
+            <button id="clearButton" class="ghost-button" type="button">Clear</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Feedback</p>
+              <h2>Interview feedback</h2>
+            </div>
+            <span class="score-pill" id="scorePill">Score --</span>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric">
+              <span class="metric-label">Average Score</span>
+              <strong class="metric-value" id="averageScore">0.0</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Clarity</span>
+              <strong class="metric-value" id="clarityScore">0.0</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Confidence</span>
+              <strong class="metric-value" id="confidenceScore">0.0</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Relevance</span>
+              <strong class="metric-value" id="relevanceScore">0.0</strong>
+            </div>
+          </div>
+
+          <div class="feedback-stack">
+            <div class="feedback-item">
+              <span>Behavioral Feedback</span>
+              <p id="commentsText">Submit an answer to see personalized feedback.</p>
+            </div>
+            <div class="feedback-item">
+              <span>Adaptive Reason</span>
+              <p id="adaptiveReason">Difficulty updates and coaching notes will appear here.</p>
+            </div>
+            <div class="feedback-item">
+              <span>Follow-up</span>
+              <p id="followUpText">No follow-up question yet.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card summary-card">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Session Summary</p>
+              <h2>Progress snapshot</h2>
+            </div>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span>Total Score</span>
+              <strong id="totalScore">0.0</strong>
+            </div>
+            <div class="summary-item">
+              <span>Difficulty Level</span>
+              <strong id="difficultyLevel">1 / 3</strong>
+            </div>
+            <div class="summary-item">
+              <span>Trend</span>
+              <strong id="scoreTrend">Flat</strong>
+            </div>
+            <div class="summary-item">
+              <span>Stress</span>
+              <strong id="stressLevel">0.00</strong>
+            </div>
+          </div>
+        </section>
+
+        <details class="card state-card">
+          <summary>Environment State</summary>
+          <pre id="stateViewer">{}</pre>
+        </details>
+
+        <div class="error-banner hidden" id="errorBanner"></div>
+      </main>
+    </div>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>
