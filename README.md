@@ -311,11 +311,3 @@ This project is released under the [MIT License](LICENSE).
 [![HuggingFace](https://img.shields.io/badge/🤗-srija--kottakki-blue)](https://huggingface.co/srija-kottakki)
 
 
-## Docker / Hugging Face
-
-```bash
-docker build -t interview-env .
-docker run -p 7860:7860 interview-env
-```
-
-The Space runs FastAPI through `launch.sh` and exposes port `7860`.
