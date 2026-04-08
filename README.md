@@ -13,16 +13,15 @@ InterviewEnv is an OpenEnv Round 1 submission that turns interview practice into
 
 The app works with or without resume upload. Without a resume, it uses a general interview bank. With a PDF/text resume, it parses skills, projects, tools, education, and experience to personalize follow-up questions.
 
-## Demo Flow
+## API Flow
 
-The live Space opens to a clean Gradio mock interview simulator:
+The live Space is API-only and exposes the OpenEnv endpoints directly:
 
-- Select `Easy`, `Medium`, or `Hard`
-- Click `Generate Question`
-- Read the `Interviewer` prompt
-- Type `Your Answer`
-- Click `Submit Answer`
-- Review feedback with score, strengths, weakness, and a suggested improvement
+- `GET /metadata`
+- `GET /reset?task_id=easy`
+- `POST /step`
+- `GET /state`
+- `POST /upload_resume`
 
 ## Why This Is RL-Based
 
@@ -70,13 +69,10 @@ InterviewEnv/
 │   ├── __init__.py
 │   ├── feedback_analyzer.py
 │   └── resume_parser.py
-├── ui/
-│   ├── app.js
-│   ├── index.html
-│   └── styles.css
 ├── docs/
 ├── examples/
 ├── screenshots/
+├── app.py
 ├── models.py
 ├── graders.py
 ├── inference.py

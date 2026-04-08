@@ -10,13 +10,6 @@ from env.tasks import TASKS
 from models import ActionModel, MetadataModel, ResetRequest, StateModel, StepResponseModel
 from utils.resume_parser import extract_resume_text, parse_resume_text
 
-try:
-    import gradio as gr
-    from ui.gradio_app import build_gradio_demo
-except ModuleNotFoundError:
-    gr = None
-    build_gradio_demo = None
-
 app = FastAPI(title="InterviewEnv", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
@@ -27,6 +20,15 @@ app.add_middleware(
 )
 
 ENV = InterviewEnv()
+
+
+@app.get("/")
+def root():
+    return {
+        "env_id": "InterviewEnv",
+        "status": "ok",
+        "message": "InterviewEnv API is running. Use /metadata for schemas and /docs for interactive API docs.",
+    }
 
 
 @app.get("/health")
@@ -98,16 +100,3 @@ def step(action: ActionModel) -> StepResponseModel:
 @app.get("/state", response_model=StateModel)
 def state() -> StateModel:
     return ENV.state()
-
-
-if gr is not None and build_gradio_demo is not None:
-    app = gr.mount_gradio_app(app, build_gradio_demo(), path="/")
-else:
-
-    @app.get("/")
-    def root():
-        return {
-            "env_id": "InterviewEnv",
-            "status": "ui_unavailable",
-            "message": "Install requirements.txt to enable the Gradio UI. The OpenEnv API endpoints are available.",
-        }
