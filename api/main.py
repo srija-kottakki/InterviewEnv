@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from env.env import InterviewEnv
 from env.tasks import TASKS
-from models import ActionModel, MetadataModel, ResetRequest, StateModel, StepResponseModel
+from models import ActionModel, MetadataModel, ObservationModel, ResetRequest, StateModel, StepResponseModel
 from utils.resume_parser import extract_resume_text, parse_resume_text
 
 app = FastAPI(title="InterviewEnv", version="1.0.0")
@@ -60,11 +60,12 @@ def metadata() -> MetadataModel:
         authors=["Kottakki Sai Srija"],
         description="OpenEnv Round 1 adaptive RL-style interview environment with structured actions, trend-aware rewards, resume context, and deterministic graders.",
         action_schema=ActionModel.model_json_schema(),
-        observation_schema=StepResponseModel.model_json_schema()["properties"]["observation"],
+        observation_schema=ObservationModel.model_json_schema(),
         state_schema=StateModel.model_json_schema(),
         tasks=[dict(task) for task in TASKS.values()],
         graders={task_id: task["grader"] for task_id, task in TASKS.items()},
         api={
+            "health": "GET /health",
             "reset": "GET /reset?task_id=easy or POST /reset",
             "step": "POST /step",
             "state": "GET /state",

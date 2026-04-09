@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec uvicorn api.main:app --host 0.0.0.0 --port "${PORT:-7860}"
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
+
+exec uvicorn server.app:app --host 0.0.0.0 --port "${PORT:-7860}"

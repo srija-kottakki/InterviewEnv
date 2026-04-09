@@ -19,4 +19,4 @@ EXPOSE 7860
 
 RUN chmod +x /app/launch.sh
 
-ENTRYPOINT ["/app/launch.sh"]
+CMD ["/app/launch.sh"]

@@ -2,10 +2,16 @@ env_id: "InterviewEnv"
 name: "InterviewEnv"
 version: "1.1.0"
 description: "Resume-optional adaptive RL-style interview environment with structured actions, trend-aware rewards, deterministic graders, and typed OpenEnv API models."
-entrypoint: "api.main:app"
+entrypoint: "server.app:app"
 runtime: "docker"
 authors:
   - "Kottakki Sai Srija"
+
+environment_variables:
+  - API_BASE_URL
+  - MODEL_NAME
+  - HF_TOKEN
+  - PORT
 
 tasks:
   - id: easy
@@ -160,6 +166,9 @@ reward:
   termination: "Episode terminates when average_score >= task success_threshold after at least two turns or turn >= max_steps."
 
 api:
+  health:
+    method: "GET"
+    path: "/health"
   reset:
     method: "GET"
     path: "/reset"
@@ -190,3 +199,10 @@ api:
 
 inference: "inference.py"
 launch: "launch.sh"
+
+runtime_constraints:
+  max_inference_minutes: 20
+
+target_hardware:
+  vcpu: 2
+  memory_gb: 8

@@ -8,317 +8,215 @@ app_port: 7860
 pinned: false
 ---
 
-# 🎯 InterviewEnv
+# InterviewEnv
 
-> **A Reinforcement-Learning Ready AI Interview Simulation Environment**
+InterviewEnv is an OpenEnv-compatible interview simulation environment for the Meta PyTorch Hackathon x Scaler School of Technology. It models realistic interview behavior across three difficulty levels and exposes a typed `reset()` / `step()` / `state()` API for RL-style training and evaluation.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![HuggingFace Space](https://img.shields.io/badge/🤗%20HuggingFace-Space-blue)](https://huggingface.co/spaces/srija-kottakki/InterviewEnv)
-[![GitHub](https://img.shields.io/badge/GitHub-Repo-black?logo=github)](https://github.com/srija-kottakki/InterviewEnv)
+## What It Simulates
 
----
+The environment asks adaptive interview questions, evaluates each answer with deterministic graders, and returns:
 
-## 📖 Introduction & Motivation
+- structured behavioral feedback
+- shaped rewards in the `0.0-1.0` range
+- follow-up questions based on answer quality
+- task success signals and episode state
 
-**InterviewEnv** is a customizable AI environment that simulates real interview scenarios. It is designed for agents that learn to answer questions, understand feedback, and improve over time — similar to real-world candidate preparation systems.
+This is designed as a real-world environment for interview preparation, coaching, and training agents that improve over repeated turns.
 
-### Why an AI Interview Environment?
+## Tasks
 
-Real interviews involve adaptive difficulty, multi-turn reasoning, and behavioral feedback. Most RL environments focus on games; InterviewEnv focuses on **human–AI interaction**. This allows developers and researchers to train agents that can:
+The environment includes three graded tasks:
 
-- Communicate clearly
-- Respond contextually
-- Handle increasing challenge levels
-- Improve through feedback loops
+| Task ID | Difficulty | Goal |
+| --- | --- | --- |
+| `easy` | easy | Answer basic interview questions clearly and relevantly |
+| `medium` | medium | Explain projects and tradeoffs with structure and reasoning |
+| `hard` | hard | Handle adaptive, pressure-style behavioral questions using STAR-style evidence |
 
-### Real-World Use Cases
+Each task has:
 
-- Interview preparation platforms
-- Adaptive tutoring systems
-- HR screening and scoring automation
-- Behavior-aware LLM agents
-- AI coaching and assessment tools
+- a deterministic grader
+- a pass threshold
+- dense reward shaping
+- multi-step interaction
 
----
+## Action Space
 
-
-
-
-https://github.com/user-attachments/assets/61159e11-12c2-4de3-93c6-c482f28236da
-
-
-
-
-
-
-## 🏗️ Environment Description
-
-InterviewEnv simulates a full interview loop:
-
-```
-Environment asks a question
-       ↓
-Agent sends an answer
-       ↓
-Environment evaluates
-       ↓
-Agent receives feedback + reward
-       ↓
-Loop continues until termination
-```
-
-### Core Architecture
-
-| Component | Description |
-|---|---|
-| **Question Generator** | Selects or adapts question difficulty |
-| **Response Evaluator** | Checks clarity, relevance, reasoning |
-| **Feedback Layer** | Provides natural-language feedback |
-| **Reward Engine** | Produces score per step |
-| **Adaptive Difficulty Engine** | Adjusts levels (easy → hard) |
-
-### Unique Features
-
-- ✅ Adaptive multi-level difficulty
-- ✅ Behavior-based scoring
-- ✅ Fully text-based interaction
-- ✅ Plug-and-play for any RL algorithm
-- ✅ Works with LLM agents, rule-based agents, or human-in-the-loop
-
----
-
-## 🕹️ Action Space
-
-**Action Type:** String action (agent's answer to the interview question)
-
-```python
-action = "Your response as a single string."
-```
-
-**Agent may send:**
-- Full sentences
-- Short answers
-- Explanations
-
-**Agent must NOT send:**
-- Empty strings
-- Non-text objects
-- JSON with metadata
-- Multiple answers in one turn
-
-**Valid Example:**
-```python
-action = "I enjoy solving problems and working in teams."
-```
-
----
-
-## 👁️ Observation Space
-
-Each environment step returns an observation dictionary:
+Actions are typed with `ActionModel`.
 
 ```json
 {
-    "question": "<string>",
-    "difficulty": "<easy|medium|hard>",
-    "feedback": "<string or None>",
-    "reward": 0.75,
-    "done": false
+  "answer": "I built a project and measured its impact.",
+  "answer_strategy": "structured",
+  "confidence_level": 4,
+  "confidence": 0.8,
+  "strategy": "structured",
+  "tone": "confident"
 }
 ```
 
-| Field | Description |
-|---|---|
-| `question` | Current interview question |
-| `difficulty` | Difficulty level (auto-adaptive) |
-| `feedback` | Behavior/evaluation message |
-| `reward` | Score for the agent's answer |
-| `done` | Whether the interview is finished |
+Important fields:
 
-### Termination Conditions
+- `answer` or `message`: the candidate response text
+- `answer_strategy`: one of `direct`, `detailed`, `structured`, `concise`, `default`, `clarify`, `skip`
+- `confidence_level`: integer `1-5`
+- `tone`: one of `neutral`, `confident`, `collaborative`, `defensive`
 
-- Agent reaches max questions
-- Agent gives consistently low-scoring answers
-- Hard task completion
-- Internal failure or invalid action
+## Observation Space
 
----
+`step()` returns:
 
-## 📋 Task Descriptions
-
-### Task 1 – Easy: Basic Q&A
-
-Personal background questions with no complex reasoning required. Reward is based on clarity and relevance.
-
-> **Example questions:**
-> - "Tell me about yourself."
-> - "What are your hobbies?"
-
-### Task 2 – Medium: Situational Questions
-
-Behavioral and situational interviews where the agent must provide structured reasoning. Feedback becomes more detailed.
-
-> **Example loop:**
-> - **Obs:** "Describe a time you solved a problem."
-> - **Act:** agent answer
-> - **Env:** gives feedback + reward (0–1)
-
-### Task 3 – Hard: Adaptive Role-Specific Interview
-
-Dynamic difficulty engine with multi-turn, memory-based reasoning and role-specific topics (tech, HR, management). Complex scoring evaluates structure, accuracy, and depth.
-
-> **Example questions:**
-> - "Explain a complex technical project in simple terms."
-> - "How would you design a scalable solution for handling real-time data?"
-
----
-
-## 📊 Baseline Scores
-
-Baseline performance across **20 episodes**:
-
-| Agent Type | Avg Reward | Success Rate | Notes |
-|---|---|---|---|
-| Random Agent | 0.10 – 0.18 | ~5% | Usually irrelevant responses |
-| Rule-based Agent | 0.35 – 0.45 | ~30% | Template-based answers |
-| Simple LLM Agent | 0.55 – 0.70 | ~60% | Good structure, moderate depth |
-
-**Expected ranges:**
-- `< 0.3` → Poor performance
-- `0.3 – 0.6` → Decent performance
-- `> 0.6` → Strong interview behavior
-
----
-
-## ⚙️ Setup & Installation
-
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/srija-kottakki/InterviewEnv
-cd InterviewEnv
+```json
+{
+  "observation": {
+    "task_id": "easy",
+    "prompt": "What is one strength you would bring to this team?",
+    "turn": 1,
+    "max_turns": 3,
+    "done": false,
+    "behavioral_feedback": {
+      "filler_score": 1.0,
+      "confidence_score": 0.65,
+      "clarity_score": 0.78,
+      "comments": "Clear structure."
+    }
+  },
+  "reward": 0.91,
+  "done": false,
+  "info": {}
+}
 ```
 
-### 2. Install dependencies
+State returned by `reset()` and `state()` includes:
+
+- question and prompt history
+- QA history
+- score history and trend
+- reward breakdown
+- stress/adaptivity metrics
+- task success and final score
+
+## Reward Design
+
+Rewards are bounded in the `0.0-1.0` range and combine:
+
+- relevance to the question
+- clarity and behavioral quality
+- confidence alignment
+- action strategy quality
+- improvement over previous turns
+- consistency across recent turns
+- repetition penalties
+
+## API
+
+The FastAPI app is available on port `7860`.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | health check |
+| `GET` | `/api` | API status |
+| `GET` | `/metadata` | environment metadata and schemas |
+| `GET` | `/reset?task_id=easy` | start an episode |
+| `POST` | `/reset` | start an episode with JSON body |
+| `POST` | `/step` | submit one action |
+| `GET` | `/state` | fetch current state |
+| `POST` | `/upload_resume` | upload a resume for optional personalization |
+
+## Project Structure
+
+```text
+InterviewEnv/
+├── api/
+├── env/
+├── server/
+├── ui/
+├── inference.py
+├── openenv.yaml
+├── Dockerfile
+├── launch.sh
+└── README.md
+```
+
+## Local Setup
+
+### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Run the environment
+### 2. Run the API locally
 
 ```bash
-python main.py
-```
-
-### 4. Run the RL agent example
-
-```bash
-python agent_example.py
-```
-
-### 5. Run HuggingFace Space locally
-
-```bash
-huggingface-cli login
 python app.py
 ```
 
-### Using the Web UI
+Then open:
 
-The Gradio app launches automatically at:
-
-```
+```text
 http://localhost:7860
 ```
 
----
+### 3. Run baseline inference locally
 
-## 💻 Usage Examples
-
-### Create the environment
-
-```python
-from interview_env import InterviewEnv
-
-env = InterviewEnv()
-obs = env.reset()
-print(obs)
+```bash
+python inference.py
 ```
 
-### Step example
+The script emits strict single-line logs in the required format:
 
-```python
-action = "I enjoy learning new technologies."
-obs, reward, done, info = env.step(action)
+```text
+[START] task=easy env=InterviewEnv model=gpt-4o-mini
+[STEP] step=1 action={"answer":"..."} reward=0.95 done=false error=null
+[END] success=true steps=2 score=0.879 rewards=0.96,0.80
 ```
 
-### Full episode loop
+If `HF_TOKEN` is not set, `inference.py` uses deterministic fallback actions so it still produces reproducible scores.
 
-```python
-obs = env.reset()
-done = False
+## Required Environment Variables
 
-while not done:
-    action = "Sample answer"  # Your agent logic here
-    obs, reward, done, info = env.step(action)
-    print(obs, reward)
+The submission expects these variables:
+
+- `API_BASE_URL`
+- `MODEL_NAME`
+- `HF_TOKEN`
+- `PORT`
+
+Defaults are provided for local execution where possible.
+
+## Docker / Hugging Face Space
+
+The repo is packaged as a Docker Space and serves the app on port `7860`.
+
+Main files:
+
+- `Dockerfile`
+- `launch.sh`
+- `openenv.yaml`
+
+## Validation
+
+A local validation helper is included:
+
+```bash
+./validate-submission.sh
 ```
 
-### RL Integration Example (pseudo-code)
+You can also validate a deployed HF Space:
 
-```python
-import stable_baselines3 as sb3
-
-env = InterviewEnv()
-model = sb3.PPO("MlpPolicy", env, verbose=1)
-model.learn(total_timesteps=5000)
+```bash
+./validate-submission.sh https://your-space-url.hf.space
 ```
 
----
+## Baseline Scores
 
- Live Demo
+Current deterministic local baseline from `inference.py`:
 
-| Link | Action |
-|---|---|
-| 🤗 [HuggingFace Space](https://huggingface.co/spaces/srija-kottakki/InterviewEnv) | Launch on HuggingFace |
-| 🌐 [Live UI](https://srija-kottakki-interviewenv.hf.space) | Try the Live UI |
-| 💻 [GitHub Repo](https://github.com/srija-kottakki/InterviewEnv) | Open GitHub Repo |
+| Task | Score |
+| --- | --- |
+| `easy` | `~0.879` |
+| `medium` | `~0.995` |
+| `hard` | `~0.942` |
 
----
-
- UI Screenshots
-
-<img width="1600" height="697" alt="image" src="https://github.com/user-attachments/assets/dee6fdaf-6573-4001-9084-b81c08ad147d" />
-
-<img width="1600" height="643" alt="image" src="https://github.com/user-attachments/assets/28d3ac6c-9fec-4aee-927e-cf3b6cdb7bf5" />
-
-<img width="1600" height="842" alt="image" src="https://github.com/user-attachments/assets/dc814f8e-4be9-4268-93b8-6159ac68fa2a" />
-
-
-
----
-
-## 🛠️ Tools & Frameworks
-
-- [Python](https://www.python.org/)
-- [Gradio](https://www.gradio.app/)
-- [Hugging Face Spaces](https://huggingface.co/spaces)
-- [LangChain](https://www.langchain.com/)
-- OpenEnv-style environment design
-
----
-
-## 📄 License
-
-This project is released under the [MIT License](LICENSE).
-
----
-
-## 👤 Author
-
-**Srija Kottakki**
-
-[![GitHub](https://img.shields.io/badge/GitHub-srija--kottakki-black?logo=github)](https://github.com/srija-kottakki)
-[![HuggingFace](https://img.shields.io/badge/🤗-srija--kottakki-blue)](https://huggingface.co/srija-kottakki)
-
+These values are reproducible with the fallback policy and may vary if a remote model is enabled with `HF_TOKEN`.
